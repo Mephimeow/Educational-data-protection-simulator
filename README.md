@@ -25,8 +25,7 @@
 ## Структура проекта
 
 ```
-├── docker-compose.yml          # Production (с песочницами)
-├── docker-compose.dev.yml      # Development (frontend + backend)
+├── docker-compose.yml          # Основной (с песочницами)
 ├── backend/
 │   ├── cmd/main.go            # Точка входа
 │   ├── internal/
@@ -59,13 +58,7 @@
 - Docker 20.10+
 - Docker Compose 2.0+
 
-### Development (frontend + backend)
-
-```bash
-docker-compose -f docker-compose.dev.yml up -d --build
-```
-
-### Production (с песочницами)
+### Запуск
 
 ```bash
 docker-compose up -d --build
@@ -75,12 +68,12 @@ docker-compose up -d --build
 
 - Frontend: http://localhost:3000
 - Backend API: http://localhost:8001
-- Песочницы:
-  - phishing: http://localhost:8081
-  - email-client: http://localhost:8082
-  - wifi-hotspot: http://localhost:8083
-  - social-network: http://localhost:8084
-  - atm-simulator: http://localhost:8085
+- Песочницы (запускаются по кнопке):
+  - phishing: http://localhost:9081
+  - email-client: http://localhost:9082
+  - wifi-hotspot: http://localhost:9083
+  - social-network: http://localhost:9084
+  - atm-simulator: http://localhost:9085
 
 ## Разработка
 
@@ -102,6 +95,8 @@ go run cmd/main.go
 
 ## API Endpoints
 
+### Основные
+
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Health check |
@@ -111,6 +106,26 @@ go run cmd/main.go
 | GET | `/api/v1/scenarios/:id/levels/:levelId` | Детали уровня |
 | GET | `/api/v1/attacks` | Типы атак |
 | GET | `/api/v1/tips` | Советы по безопасности |
+
+### Управление песочницами
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/sandbox/list` | Список песочниц |
+| POST | `/api/v1/sandbox/start` | Запустить песочницу |
+| POST | `/api/v1/sandbox/stop` | Остановить песочницу |
+| GET | `/api/v1/sandbox/status/:name` | Статус песочницы |
+
+**Запуск/остановка:**
+```bash
+curl -X POST http://localhost:8001/api/v1/sandbox/start \
+  -H "Content-Type: application/json" \
+  -d '{"name": "email-client"}'
+
+curl -X POST http://localhost:8001/api/v1/sandbox/stop \
+  -H "Content-Type: application/json" \
+  -d '{"name": "email-client"}'
+```
 
 ## Сценарии и уровни
 

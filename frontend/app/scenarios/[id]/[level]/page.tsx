@@ -33,7 +33,7 @@ const scenarios = {
           </ul>
         `,
         sandbox: "email-client",
-        sandboxPort: 8082,
+        sandboxPort: 9082,
         action: "Проверьте входящие письма и определите фишинговые",
         correctAction: "Удалить подозрительные письма, не переходить по ссылкам"
       },
@@ -61,7 +61,7 @@ const scenarios = {
           </ul>
         `,
         sandbox: "phishing",
-        sandboxPort: 8081,
+        sandboxPort: 9081,
         action: "Вам оставили USB-флешку на столе. Что делать?",
         correctAction: "Не подключать к компьютеру, сдать в IT-отдел"
       },
@@ -89,7 +89,7 @@ const scenarios = {
           </ul>
         `,
         sandbox: "social-network",
-        sandboxPort: 8084,
+        sandboxPort: 9084,
         action: "Вам звонит \"сотрудник IT\" и просит пароль",
         correctAction: "Отказать, перезвонить в IT-отдел по официальному номеру"
       }
@@ -122,7 +122,7 @@ const scenarios = {
           </ul>
         `,
         sandbox: "phishing",
-        sandboxPort: 8081,
+        sandboxPort: 9081,
         action: "Проверьте интернет-банк на подлинность",
         correctAction: "Распознать поддельный сайт и не вводить данные"
       },
@@ -150,7 +150,7 @@ const scenarios = {
           </ul>
         `,
         sandbox: "phishing",
-        sandboxPort: 8081,
+        sandboxPort: 9081,
         action: "Создайте новый пароль для аккаунта",
         correctAction: "Использовать менеджер паролей и 2FA"
       },
@@ -178,7 +178,7 @@ const scenarios = {
           </ul>
         `,
         sandbox: "email-client",
-        sandboxPort: 8082,
+        sandboxPort: 9082,
         action: "Найдите подозрительное письмо об обновлении",
         correctAction: "Обновляться только через официальные каналы"
       }
@@ -211,7 +211,7 @@ const scenarios = {
           </ul>
         `,
         sandbox: "wifi-hotspot",
-        sandboxPort: 8083,
+        sandboxPort: 9083,
         action: "Выберите безопасную сеть для подключения",
         correctAction: "Подключиться к официальной или защищённой сети"
       },
@@ -239,7 +239,7 @@ const scenarios = {
           </ul>
         `,
         sandbox: "atm-simulator",
-        sandboxPort: 8085,
+        sandboxPort: 9085,
         action: "Проверьте банкомат на наличие скиммера",
         correctAction: "Обнаружить и не использовать заражённый банкомат"
       },
@@ -266,13 +266,15 @@ const scenarios = {
           </ul>
         `,
         sandbox: "wifi-hotspot",
-        sandboxPort: 8083,
+        sandboxPort: 9083,
         action: "Безопасно работайте с конфиденциальными данными",
         correctAction: "Использовать VPN и защитную плёнку"
       }
     }
   }
 }
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
 
 export default function ScenarioLevelPage() {
   const params = useParams()
@@ -285,6 +287,48 @@ export default function ScenarioLevelPage() {
   const [result, setResult] = useState<{success: boolean; message: string} | null>(null)
   const [showTheory, setShowTheory] = useState(true)
   const [completed, setCompleted] = useState(false)
+  const [sandboxRunning, setSandboxRunning] = useState(false)
+  const [sandboxLoading, setSandboxLoading] = useState(false)
+
+  const startSandbox = async () => {
+    if (!level?.sandbox) return
+    setSandboxLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/v1/sandbox/start`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: level.sandbox })
+      })
+      const data = await res.json()
+      if (data.status === 'started' || data.status === 'already_running') {
+        setSandboxRunning(true)
+      }
+    } catch (err) {
+      console.error('Failed to start sandbox:', err)
+    } finally {
+      setSandboxLoading(false)
+    }
+  }
+
+  const stopSandbox = async () => {
+    if (!level?.sandbox) return
+    setSandboxLoading(true)
+    try {
+      const res = await fetch(`${API_URL}/api/v1/sandbox/stop`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: level.sandbox })
+      })
+      const data = await res.json()
+      if (data.status === 'stopped' || data.status === 'not_running') {
+        setSandboxRunning(false)
+      }
+    } catch (err) {
+      console.error('Failed to stop sandbox:', err)
+    } finally {
+      setSandboxLoading(false)
+    }
+  }
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -404,7 +448,7 @@ export default function ScenarioLevelPage() {
             <div className="bg-slate-700/50 px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                  <div className={`w-3 h-3 rounded-full ${sandboxRunning ? 'bg-green-500' : 'bg-slate-500'}`}></div>
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
                 </div>
@@ -412,7 +456,25 @@ export default function ScenarioLevelPage() {
                   Интерактивная среда — {level.sandbox}
                 </span>
               </div>
-              <span className="text-slate-500 text-xs">Песочница</span>
+              <div className="flex items-center gap-2">
+                {sandboxRunning ? (
+                  <button
+                    onClick={stopSandbox}
+                    disabled={sandboxLoading}
+                    className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition disabled:opacity-50"
+                  >
+                    {sandboxLoading ? '⏳' : '✕'} Остановить
+                  </button>
+                ) : (
+                  <button
+                    onClick={startSandbox}
+                    disabled={sandboxLoading}
+                    className="bg-green-500/20 hover:bg-green-500/30 text-green-400 px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition disabled:opacity-50"
+                  >
+                    {sandboxLoading ? '⏳' : '▶'} Запустить
+                  </button>
+                )}
+              </div>
             </div>
             <div className="h-[600px] bg-slate-900">
               {completed && result?.success ? (
@@ -428,6 +490,27 @@ export default function ScenarioLevelPage() {
                       Следующий уровень →
                     </Link>
                   </div>
+                </div>
+              ) : !sandboxRunning ? (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8">
+                  <div className="text-6xl mb-4">🎮</div>
+                  <h3 className="text-xl font-bold text-white mb-2">Песочница остановлена</h3>
+                  <p className="text-slate-400 mb-6">Нажмите кнопку "Запустить" для начала работы</p>
+                  <button
+                    onClick={startSandbox}
+                    disabled={sandboxLoading}
+                    className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-6 py-3 rounded-xl transition disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {sandboxLoading ? (
+                      <>
+                        <span className="animate-spin">⏳</span> Запуск...
+                      </>
+                    ) : (
+                      <>
+                        ▶ Запустить песочницу
+                      </>
+                    )}
+                  </button>
                 </div>
               ) : (
                 <iframe

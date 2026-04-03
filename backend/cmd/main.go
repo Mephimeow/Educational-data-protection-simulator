@@ -26,6 +26,7 @@ func main() {
 	models.InitDB()
 
 	api.RegisterRoutes(r)
+	api.RegisterSandboxRoutes(r)
 
 	port := os.Getenv("PORT")
 	if port == "" {
