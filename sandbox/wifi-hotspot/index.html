@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FreeWiFi - Подключение</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .wifi-modal {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+        }
+        .wifi-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 25px;
+            font-size: 2.5rem;
+        }
+        h1 { color: #333; margin-bottom: 10px; font-size: 1.5rem; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+        .network-list { text-align: left; margin-bottom: 25px; }
+        .network {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .network:hover { border-color: #667eea; }
+        .network.selected { border-color: #667eea; background: #f8f7ff; }
+        .network-icon { font-size: 1.5rem; margin-right: 15px; }
+        .network-info { flex: 1; }
+        .network-name { font-weight: 600; color: #333; }
+        .network-signal { font-size: 0.8rem; color: #999; }
+        .lock { font-size: 0.8rem; }
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-connect { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-connect:hover { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102,126,234,0.4); }
+        .btn-connect:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .warning-box {
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .warning-box.show { display: block; }
+        .warning-box h4 { color: #856404; margin-bottom: 5px; }
+        .warning-box p { color: #856404; font-size: 0.9rem; }
+        .danger-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(220,53,69,0.95);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .danger-overlay.show { display: flex; }
+        .danger-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+        }
+        .danger-content h2 { color: #dc3545; margin-bottom: 20px; font-size: 1.6rem; }
+        .danger-content p { color: #333; margin-bottom: 15px; line-height: 1.6; }
+        .success-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(40,167,69,0.95);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .success-overlay.show { display: flex; }
+        .success-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+        }
+        .success-content h2 { color: #28a745; margin-bottom: 20px; font-size: 1.6rem; }
+        .success-content p { color: #333; margin-bottom: 15px; line-height: 1.6; }
+        .free-badge {
+            background: #28a745;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+        .fake-badge {
+            background: #dc3545;
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="wifi-modal">
+        <div class="wifi-icon">📶</div>
+        <h1>Доступные сети</h1>
+        <p class="subtitle">Выберите сеть для подключения</p>
+
+        <div class="warning-box" id="warningBox">
+            <h4>⚠️ Совет по безопасности</h4>
+            <p>Не подключайтесь к сетям с одинаковыми названиями. Проверяйте официальные точки доступа.</p>
+        </div>
+
+        <div class="network-list">
+            <div class="network" onclick="selectNetwork(this, 'cafe')">
+                <span class="network-icon">☕</span>
+                <div class="network-info">
+                    <div class="network-name">Cafe_Moscow_Free</div>
+                    <div class="network-signal">Сигнал: средний • Без пароля</div>
+                </div>
+                <span class="free-badge">Бесплатно</span>
+            </div>
+            <div class="network" onclick="selectNetwork(this, 'fake')">
+                <span class="network-icon">📍</span>
+                <div class="network-info">
+                    <div class="network-name">Starbucks_Free_WiFi</div>
+                    <div class="network-signal">Сигнал: сильный • Без пароля</div>
+                </div>
+                <span class="fake-badge">⚠️ Риск</span>
+            </div>
+            <div class="network" onclick="selectNetwork(this, 'secure')">
+                <span class="network-icon">🏢</span>
+                <div class="network-info">
+                    <div class="network-name">MoscowMetro_5G</div>
+                    <div class="network-signal">Сигнал: средний • Защищенная сеть</div>
+                </div>
+                <span class="lock">🔒</span>
+            </div>
+            <div class="network" onclick="selectNetwork(this, 'eviltwin')">
+                <span class="network-icon">🎭</span>
+                <div class="network-info">
+                    <div class="network-name">Free_WiFi_Area</div>
+                    <div class="network-signal">Сигнал: очень сильный • Без пароля</div>
+                </div>
+                <span class="fake-badge">⚠️ Подозрительно</span>
+            </div>
+        </div>
+
+        <button class="btn btn-connect" id="connectBtn" onclick="connect()" disabled>
+            Подключиться
+        </button>
+    </div>
+
+    <div class="danger-overlay" id="dangerOverlay">
+        <div class="danger-content">
+            <h2>🚨 АТАКА "ЗЛОЙ ДВОЙНИК" (Evil Twin)</h2>
+            <p><strong>Вы подключились к поддельной точке доступа!</strong></p>
+            <p>Злоумышленник создал точку доступа с привлекательным названием для перехвата вашего трафика.</p>
+            <p style="background:#f8f9fa;padding:15px;border-radius:10px;text-align:left;margin-top:20px;">
+                <strong>Как защититься:</strong><br>
+                • Используйте VPN в общественных сетях<br>
+                • Проверяйте официальные названия сетей<br>
+                • Избегайте сетей без пароля для важных дел<br>
+                • Отключайте автоподключение к Wi-Fi
+            </p>
+            <button class="btn btn-connect" onclick="closeOverlay('danger')">Понятно</button>
+        </div>
+    </div>
+
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-content">
+            <h2>✅ Правильное решение!</h2>
+            <p><strong>Вы выбрали более безопасный вариант!</strong></p>
+            <p>Подключение к официальным или защищенным сетям снижает риск перехвата данных.</p>
+            <p style="background:#f8f9fa;padding:15px;border-radius:10px;text-align:left;margin-top:20px;">
+                <strong>Лучшие практики:</strong><br>
+                • Предпочитайте защищенные сети с паролем<br>
+                • Используйте VPN для дополнительной защиты<br>
+                • Избегайте банковских операций в общественных сетях<br>
+                • Отключайте Wi-Fi когда не используете
+            </p>
+            <button class="btn btn-connect" onclick="closeOverlay('success')">Отлично</button>
+        </div>
+    </div>
+
+    <script>
+        let selectedNetwork = null;
+        const warnings = {
+            'cafe': false,
+            'fake': true,
+            'secure': false,
+            'eviltwin': true
+        };
+
+        function selectNetwork(el, type) {
+            document.querySelectorAll('.network').forEach(n => n.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedNetwork = type;
+            document.getElementById('connectBtn').disabled = false;
+
+            const warningBox = document.getElementById('warningBox');
+            if (type === 'fake') {
+                warningBox.classList.add('show');
+                warningBox.innerHTML = '<h4>⚠️ Внимание!</h4><p>Это название похоже на официальную сеть кафе. Это может быть злоумышленник.</p>';
+            } else if (type === 'eviltwin') {
+                warningBox.classList.add('show');
+                warningBox.innerHTML = '<h4>🚨 Высокий риск!</h4><p>Сеть "Free_WiFi_Area" не принадлежит никакой организации. Остерегайтесь атак "Злой двойник".</p>';
+            } else {
+                warningBox.classList.remove('show');
+            }
+        }
+
+        function connect() {
+            if (!selectedNetwork) return;
+
+            if (selectedNetwork === 'fake' || selectedNetwork === 'eviltwin') {
+                document.getElementById('dangerOverlay').classList.add('show');
+                parent.postMessage({ type: 'sandbox-result', success: false, message: 'Подключение к опасной сети!' }, '*');
+            } else {
+                document.getElementById('successOverlay').classList.add('show');
+                parent.postMessage({ type: 'sandbox-result', success: true, message: 'Безопасное подключение!' }, '*');
+            }
+        }
+
+        function closeOverlay(type) {
+            document.getElementById(type + 'Overlay').classList.remove('show');
+        }
+    </script>
+</body>
+</html>

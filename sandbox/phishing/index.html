@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureBank - Интернет-банкинг</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+        }
+        .header {
+            background: linear-gradient(135deg, #0f4c75 0%, #3282b8 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { font-size: 1.5rem; }
+        .header .user { display: flex; align-items: center; gap: 10px; }
+        .content { padding: 30px; }
+        .card {
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .card:hover { border-color: #3282b8; transform: translateY(-2px); }
+        .card h3 { color: #1a1a2e; margin-bottom: 10px; }
+        .card p { color: #666; font-size: 0.95rem; }
+        .card .amount { font-size: 1.8rem; font-weight: bold; color: #0f4c75; margin: 10px 0; }
+        .card .date { color: #999; font-size: 0.85rem; }
+        .actions { display: flex; gap: 15px; margin-top: 15px; }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #0f4c75; color: white; }
+        .btn-primary:hover { background: #0d3d5c; }
+        .btn-secondary { background: #e0e0e0; color: #333; }
+        .btn-secondary:hover { background: #d0d0d0; }
+        .phishing-banner {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        .phishing-banner.show { display: block; }
+        .phishing-banner h4 { color: #856404; margin-bottom: 5px; }
+        .phishing-banner p { color: #856404; }
+        .fake-login {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+        }
+        .fake-login.show { display: flex; }
+        .login-box {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            width: 400px;
+            max-width: 90%;
+        }
+        .login-box input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .login-box input:focus { border-color: #0f4c75; outline: none; }
+        .warning-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(220,53,69,0.95);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .warning-overlay.show { display: flex; }
+        .warning-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+        }
+        .warning-content h2 { color: #dc3545; margin-bottom: 20px; font-size: 1.8rem; }
+        .warning-content p { color: #333; margin-bottom: 15px; line-height: 1.6; }
+        .warning-content .btn { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 SecureBank</h1>
+            <div class="user">
+                <span>👤</span>
+                <span>Алексей Смирнов</span>
+            </div>
+        </div>
+        <div class="content">
+            <div class="phishing-banner" id="phishingBanner">
+                <h4>⚠️ ВНИМАНИЕ: Фишинговая атака!</h4>
+                <p>Вы попались на фишинговую атаку! Злоумышленник создал поддельную страницу для кражи ваших данных.</p>
+            </div>
+            
+            <div class="card" id="accountCard" onclick="showLogin()">
+                <h3>💳 Основной счёт</h3>
+                <div class="amount">125 750 ₽</div>
+                <p>Номер карты: **** **** **** 4582</p>
+                <p class="date">Обновлено: сегодня, 14:32</p>
+                <div class="actions">
+                    <button class="btn btn-primary">Перевод</button>
+                    <button class="btn btn-secondary">История</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>📊 Статистика</h3>
+                <p>Расходы за месяц: 45 230 ₽</p>
+                <p>Доходы за месяц: 120 000 ₽</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="fake-login" id="fakeLogin">
+        <div class="login-box">
+            <h2 style="text-align:center; color:#0f4c75; margin-bottom:20px;">Подтверждение операции</h2>
+            <p style="color:#666; margin-bottom:15px;">Для завершения операции введите данные карты:</p>
+            <input type="text" placeholder="Номер карты" id="cardInput">
+            <input type="text" placeholder="Срок действия (ММ/ГГ)" id="expiryInput">
+            <input type="password" placeholder="CVC" id="cvcInput">
+            <input type="password" placeholder="Пароль из SMS" id="smsPass">
+            <button class="btn btn-primary" style="width:100%; margin-top:10px;" onclick="submitData()">Подтвердить</button>
+            <p style="color:#999; font-size:0.85rem; margin-top:10px; text-align:center;">
+                ⚠️ SecureBank никогда не запрашивает полные данные карты
+            </p>
+        </div>
+    </div>
+
+    <div class="warning-overlay" id="warningOverlay">
+        <div class="warning-content">
+            <h2>🚨 ФИШИНГОВАЯ АТАКА!</h2>
+            <p><strong>Вы обнаружили поддельный сайт!</strong></p>
+            <p>Этот сайт имитирует страницу банка для кражи ваших данных. Обратите внимание на признаки:</p>
+            <p>• URL отличается от настоящего банка<br>
+               • Запрос конфиденциальных данных (CVC, полный пароль)<br>
+               • Срочность и давление на принятие решений</p>
+            <button class="btn btn-primary" onclick="closeWarning()">Понятно</button>
+        </div>
+    </div>
+
+    <script>
+        let clickCount = 0;
+        
+        function showLogin() {
+            document.getElementById('fakeLogin').classList.add('show');
+        }
+
+        function submitData() {
+            document.getElementById('fakeLogin').classList.remove('show');
+            document.getElementById('phishingBanner').classList.add('show');
+            parent.postMessage({ type: 'sandbox-result', success: false, message: 'Данные карты отправлены мошенникам!' }, '*');
+        }
+
+        function closeWarning() {
+            document.getElementById('warningOverlay').classList.remove('show');
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.getElementById('fakeLogin').classList.remove('show');
+            }
+        });
+    </script>
+</body>
+</html>

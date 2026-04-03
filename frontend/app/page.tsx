@@ -1,35 +1,160 @@
 import Link from "next/link"
 
+const scenarios = [
+  {
+    id: "office",
+    title: "🏢 Офис",
+    description: "Сценарий: Рабочий день в офисе. Фишинговые письма, подозрительные USB-накопители, социальная инженерия.",
+    icon: "🏢",
+    color: "blue",
+    levels: 3,
+    attacks: ["phishing", "usb", "social_engineering"]
+  },
+  {
+    id: "home",
+    title: "🏠 Дом",
+    description: "Сценарий: Удалённая работа. Безопасность домашней сети, пароли, фишинг в мессенджерах.",
+    icon: "🏠",
+    color: "green",
+    levels: 3,
+    attacks: ["phishing", "password", "malware"]
+  },
+  {
+    id: "public",
+    title: "📶 Общественный Wi-Fi",
+    description: "Сценарий: Кафе и общественные места. Атаки \"злой двойник\", перехват трафика, скимминг.",
+    icon: "📶",
+    color: "purple",
+    levels: 3,
+    attacks: ["evil_twin", "mitm", "skimming"]
+  }
+]
+
+const attackTypes = [
+  { id: "phishing", name: "Фишинг", icon: "🎣", description: "Поддельные письма и сайты для кражи данных" },
+  { id: "social_engineering", name: "Социальная инженерия", icon: "🎭", description: "Манипуляция людьми для получения информации" },
+  { id: "evil_twin", name: "Злой двойник", icon: "👻", description: "Поддельные Wi-Fi точки доступа" },
+  { id: "skimming", name: "Скимминг", icon: "💳", description: "Установка считывателей на банкоматы" },
+  { id: "password", name: "Подбор пароля", icon: "🔑", description: "Brute force и угадывание паролей" },
+]
+
 export default function Home() {
   return (
-    <main className="min-h-screen p-8">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-4xl font-bold mb-2">CyberSimulator</h1>
-        <p className="text-gray-600 mb-8">Интерактивный веб-симулятор для повышения цифровой грамотности и безопасности</p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Link href="/email" className="block bg-white p-6 rounded-lg shadow-md border-2 border-blue-500 hover:shadow-lg transition">
-            <h2 className="text-xl font-semibold mb-4">📧 Симулятор почты</h2>
-            <p className="text-gray-600 mb-4">Обнаруживайте фишинговые письма и вредоносные вложения</p>
-            <span className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Открыть</span>
-          </Link>
-          
-          <Link href="/social" className="block bg-white p-6 rounded-lg shadow-md border-2 border-green-500 hover:shadow-lg transition">
-            <h2 className="text-xl font-semibold mb-4">📱 Социальные сети</h2>
-            <p className="text-gray-600 mb-4">Распознавайте мошеннические сообщения и фейковые профили</p>
-            <span className="inline-block bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Открыть</span>
-          </Link>
-          
-          <div className="bg-white p-6 rounded-lg shadow-md border-2 border-purple-500 hover:shadow-lg transition">
-            <h2 className="text-xl font-semibold mb-4">🌐 Браузер</h2>
-            <p className="text-gray-600 mb-4">Изучите фишинговые сайты и поддельные формы ввода</p>
-            <span className="inline-block bg-purple-500 text-white px-4 py-2 rounded">Скоро</span>
+    <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+      <header className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl">🛡️</span>
+            <h1 className="text-2xl font-bold text-white">CyberSimulator</h1>
           </div>
+          <nav className="flex gap-6">
+            <Link href="/scenarios" className="text-slate-300 hover:text-white transition">Сценарии</Link>
+            <Link href="/stats" className="text-slate-300 hover:text-white transition">Статистика</Link>
+            <Link href="/about" className="text-slate-300 hover:text-white transition">О проекте</Link>
+          </nav>
         </div>
+      </header>
 
-        <div className="mt-8 bg-yellow-50 border-l-4 border-yellow-400 p-4">
-          <p className="text-yellow-800">⚠️ Выберите среду для начала. Каждая среда содержит реалистичные сценарии кибератак.</p>
-        </div>
+      <div className="max-w-6xl mx-auto px-6 py-12">
+        <section className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">
+            Обучайтесь кибербезопасности<br/>
+            <span className="text-cyan-400"> через практику</span>
+          </h2>
+          <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-8">
+            Интерактивные сценарии с реальными угрозами. Изучайте, как распознавать атаки, 
+            принимая решения в безопасной среде.
+          </p>
+          <Link 
+            href="/scenarios" 
+            className="inline-block bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 py-4 rounded-xl transition transform hover:scale-105"
+          >
+            Начать обучение →
+          </Link>
+        </section>
+
+        <section className="mb-16">
+          <h3 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+            <span>🎯</span> Выберите сценарий
+          </h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            {scenarios.map(scenario => (
+              <Link 
+                key={scenario.id}
+                href={`/scenarios/${scenario.id}`}
+                className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl p-6 hover:border-cyan-500/50 transition group"
+              >
+                <div className="text-5xl mb-4">{scenario.icon}</div>
+                <h4 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition">
+                  {scenario.title}
+                </h4>
+                <p className="text-slate-400 text-sm mb-4">{scenario.description}</p>
+                <div className="flex flex-wrap gap-2">
+                  {scenario.attacks.map(attack => {
+                    const type = attackTypes.find(t => t.id === attack)
+                    return (
+                      <span 
+                        key={attack}
+                        className="bg-slate-700/50 text-slate-300 text-xs px-3 py-1 rounded-full"
+                      >
+                        {type?.icon} {type?.name}
+                      </span>
+                    )
+                  })}
+                </div>
+                <div className="mt-4 text-cyan-400 text-sm font-medium">
+                  {scenario.levels} уровня →
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-16">
+          <h3 className="text-2xl font-bold text-white mb-8 flex items-center gap-3">
+            <span>📚</span> Типы угроз
+          </h3>
+          <div className="grid md:grid-cols-5 gap-4">
+            {attackTypes.map(type => (
+              <div 
+                key={type.id}
+                className="bg-slate-800/30 border border-slate-700 rounded-xl p-4 text-center"
+              >
+                <div className="text-3xl mb-2">{type.icon}</div>
+                <h5 className="font-semibold text-white text-sm mb-1">{type.name}</h5>
+                <p className="text-slate-500 text-xs">{type.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-gradient-to-r from-cyan-500/10 to-purple-500/10 border border-cyan-500/30 rounded-2xl p-8">
+          <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-3">
+            <span>💡</span> Как это работает?
+          </h3>
+          <div className="grid md:grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-4xl mb-3">📖</div>
+              <h5 className="font-semibold text-white mb-2">Теория</h5>
+              <p className="text-slate-400 text-sm">Изучите принципы работы угроз и как их распознавать</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-3">🎮</div>
+              <h5 className="font-semibold text-white mb-2">Практика</h5>
+              <p className="text-slate-400 text-sm">Интерактивные симуляции в безопасной среде</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-3">✅</div>
+              <h5 className="font-semibold text-white mb-2">Проверка</h5>
+              <p className="text-slate-400 text-sm">Выбирайте правильные решения и получайте обратную связь</p>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl mb-3">📈</div>
+              <h5 className="font-semibold text-white mb-2">Прогресс</h5>
+              <p className="text-slate-400 text-sm">Отслеживайте свои навыки и становитесь экспертом</p>
+            </div>
+          </div>
+        </section>
       </div>
     </main>
   )

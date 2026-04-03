@@ -12,3 +12,39 @@ body {
   color: rgb(var(--foreground-rgb));
   background: linear-gradient(to bottom, transparent, rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
 }
+
+.theory-content h3 {
+  @apply text-xl font-bold text-white mb-4 mt-6 first:mt-0;
+}
+
+.theory-content h4 {
+  @apply text-lg font-semibold text-slate-300 mb-3 mt-5;
+}
+
+.theory-content p {
+  @apply text-slate-300 leading-relaxed mb-4;
+}
+
+.theory-content ul {
+  @apply list-disc list-inside text-slate-300 mb-4 space-y-2;
+}
+
+.theory-content li {
+  @apply text-slate-300;
+}
+
+.theory-content li strong {
+  @apply text-cyan-400;
+}
+
+.theory-content strong {
+  @apply text-white;
+}
+
+.theory-content a {
+  @apply text-cyan-400 hover:underline;
+}
+
+.theory-content .warning {
+  @apply bg-amber-500/20 border border-amber-500/50 rounded-lg p-4 my-4;
+}

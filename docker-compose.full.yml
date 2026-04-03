@@ -50,6 +50,41 @@ services:
     networks:
       - app-network
 
+  sandbox-phishing:
+    build: ./sandbox/phishing
+    ports:
+      - "8081:80"
+    networks:
+      - app-network
+
+  sandbox-email:
+    build: ./sandbox/email-client
+    ports:
+      - "8082:80"
+    networks:
+      - app-network
+
+  sandbox-wifi:
+    build: ./sandbox/wifi-hotspot
+    ports:
+      - "8083:80"
+    networks:
+      - app-network
+
+  sandbox-social:
+    build: ./sandbox/social-network
+    ports:
+      - "8084:80"
+    networks:
+      - app-network
+
+  sandbox-atm:
+    build: ./sandbox/atm-simulator
+    ports:
+      - "8085:80"
+    networks:
+      - app-network
+
 networks:
   app-network:
     driver: bridge

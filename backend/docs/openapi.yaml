@@ -1,0 +1,244 @@
+openapi: 3.0.3
+info:
+  title: CyberSimulator API
+  description: Educational cybersecurity simulator API
+  version: 1.0.0
+servers:
+  - url: http://localhost:8001
+    description: Development server
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      tags:
+        - System
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/scenarios:
+    get:
+      summary: Get all scenarios
+      tags:
+        - Scenarios
+      responses:
+        '200':
+          description: List of scenarios
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  scenarios:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Scenario'
+
+  /api/v1/scenarios/{id}:
+    get:
+      summary: Get scenario by ID
+      tags:
+        - Scenarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [office, home, public]
+      responses:
+        '200':
+          description: Scenario details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Scenario'
+        '404':
+          description: Scenario not found
+
+  /api/v1/scenarios/{id}/levels:
+    get:
+      summary: Get levels for a scenario
+      tags:
+        - Scenarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of levels
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  levels:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Level'
+
+  /api/v1/scenarios/{id}/levels/{levelId}:
+    get:
+      summary: Get level by ID
+      tags:
+        - Scenarios
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: levelId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Level details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LevelDetail'
+        '404':
+          description: Level not found
+
+  /api/v1/attacks:
+    get:
+      summary: Get attack types
+      tags:
+        - Reference
+      responses:
+        '200':
+          description: List of attack types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  attacks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AttackType'
+
+  /api/v1/tips:
+    get:
+      summary: Get security tips
+      tags:
+        - Reference
+      responses:
+        '200':
+          description: Security tips by category
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tips:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SecurityTip'
+
+components:
+  schemas:
+    Scenario:
+      type: object
+      properties:
+        id:
+          type: string
+          example: office
+        title:
+          type: string
+          example: "🏢 Офис"
+        description:
+          type: string
+        environment:
+          type: string
+        threat_type:
+          type: string
+        threat_level:
+          type: string
+          enum: [low, medium, high, critical]
+
+    Level:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Утренняя почта"
+        attack:
+          type: string
+          example: "Фишинг"
+        icon:
+          type: string
+          example: "📧"
+        difficulty:
+          type: string
+          enum: [Легко, Средне, Сложно]
+
+    LevelDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        attack:
+          type: string
+        icon:
+          type: string
+        sandbox:
+          type: string
+          description: Sandbox container name
+        port:
+          type: integer
+          description: Port for sandbox iframe
+
+    AttackType:
+      type: object
+      properties:
+        id:
+          type: string
+          example: phishing
+        name:
+          type: string
+          example: "Фишинг"
+        icon:
+          type: string
+          example: "🎣"
+        description:
+          type: string
+        cwe:
+          type: array
+          items:
+            type: string
+          example: ["CWE-20", "CWE-287"]
+
+    SecurityTip:
+      type: object
+      properties:
+        category:
+          type: string
+          example: phishing
+        tips:
+          type: array
+          items:
+            type: string
+          example:
+            - "Проверяйте адрес отправителя"
+            - "Не переходите по ссылкам из писем"

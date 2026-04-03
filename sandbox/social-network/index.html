@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialNet - Социальная сеть</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+        .app { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .post {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .post-header { display: flex; align-items: center; margin-bottom: 15px; }
+        .avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            margin-right: 12px;
+        }
+        .avatar.fake { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .user-info h4 { color: #1a1a2e; font-size: 1rem; }
+        .user-info span { color: #65676b; font-size: 0.85rem; }
+        .post-content { color: #1a1a2e; line-height: 1.6; margin-bottom: 15px; }
+        .post-content a { color: #1877f2; text-decoration: none; }
+        .post-image {
+            width: 100%;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .post-actions { display: flex; gap: 15px; border-top: 1px solid #e0e0e0; padding-top: 12px; }
+        .action-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: none;
+            color: #65676b;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+        .action-btn:hover { background: #f0f2f5; }
+        .action-btn.danger { color: #dc3545; }
+        .action-btn.success { color: #28a745; }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal.show { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+        }
+        .modal-content.danger { border-top: 4px solid #dc3545; }
+        .modal-content.success { border-top: 4px solid #28a745; }
+        .modal-content.info { border-top: 4px solid #1877f2; }
+        .modal h3 { margin-bottom: 15px; font-size: 1.3rem; }
+        .modal p { color: #65676b; line-height: 1.6; margin-bottom: 15px; }
+        .modal-list { background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .modal-list li { margin-bottom: 8px; color: #333; }
+        .modal-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-primary { background: #1877f2; color: white; }
+        .btn-secondary { background: #e0e0e0; color: #333; }
+        .friend-request {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .friend-request .avatar { margin-right: 15px; }
+        .friend-info { flex: 1; }
+        .friend-info h4 { color: #1a1a2e; }
+        .friend-info p { color: #65676b; font-size: 0.85rem; }
+        .friend-actions { display: flex; gap: 10px; }
+        .friend-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .friend-actions .accept { background: #1877f2; color: white; }
+        .friend-actions .decline { background: #e0e0e0; color: #333; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <h1 style="margin-bottom:20px;color:#1a1a2e;">📱 SocialNet</h1>
+
+        <div id="friendRequests"></div>
+
+        <div class="post" id="post1">
+            <div class="post-header">
+                <div class="avatar fake">🎁</div>
+                <div class="user-info">
+                    <h4>Mega Shop Official</h4>
+                    <span>Промо • 🌐</span>
+                </div>
+            </div>
+            <div class="post-content">
+                <p>🎉 <strong>ПОЗДРАВЛЯЕМ!</strong> Вы выбраны для участия в розыгрыше!</p>
+                <p>Мы разыгрываем 1000 подарочных карт по 10 000 ₽!</p>
+                <p>Перейдите по ссылке и ответьте на 3 вопроса: <a href="#" onclick="showPhishingModal(); return false;">ЗАБРАТЬ ПРИЗ</a></p>
+                <p style="color:#dc3545;">⏰ Акция действует только 24 часа!</p>
+            </div>
+            <div class="post-actions">
+                <button class="action-btn">👍 Нравится</button>
+                <button class="action-btn">💬 Комментарии</button>
+                <button class="action-btn" onclick="showReportMenu()">⚠️ Пожаловаться</button>
+            </div>
+        </div>
+
+        <div class="post" id="post2">
+            <div class="post-header">
+                <div class="avatar">👤</div>
+                <div class="user-info">
+                    <h4>Анна Петрова</h4>
+                    <span>2 ч.</span>
+                </div>
+            </div>
+            <div class="post-content">
+                <p>Всем привет! Кто-нибудь знает хороший рецепт борща? 🥣</p>
+            </div>
+            <div class="post-actions">
+                <button class="action-btn">👍 Нравится</button>
+                <button class="action-btn">💬 Комментарии</button>
+                <button class="action-btn">↗️ Поделиться</button>
+            </div>
+        </div>
+
+        <div class="post" id="post3">
+            <div class="post-header">
+                <div class="avatar fake">🎭</div>
+                <div class="user-info">
+                    <h4>Техподдержка Сбербанк</h4>
+                    <span>🔴 Подозрительный аккаунт</span>
+                </div>
+            </div>
+            <div class="post-content">
+                <p>⚠️ <strong>ВНИМАНИЕ!</strong></p>
+                <p>Мы заметили подозрительную активность на вашем счете. Для защиты средств срочно подтвердите ваши данные:</p>
+                <p><a href="#" onclick="showPhishingModal(); return false;">ПОДТВЕРДИТЬ АККАУНТ</a></p>
+            </div>
+            <div class="post-actions">
+                <button class="action-btn">👍 Нравится</button>
+                <button class="action-btn">💬 Комментарии</button>
+                <button class="action-btn danger" onclick="handleAction('report')">🚫 Пожаловаться</button>
+            </div>
+        </div>
+
+        <div class="post" id="post4">
+            <div class="post-header">
+                <div class="avatar">💼</div>
+                <div class="user-info">
+                    <h4>Игорь Сидоров</h4>
+                    <span>Общий друг: 15 человек</span>
+                </div>
+            </div>
+            <div class="post-content">
+                <p>Привет!许久不见! Помнишь меня? 😊</p>
+                <p>Кстати, я сейчас инвестирую в криптовалюту и зарабатываю отличные деньги! Могу поделиться секретом...</p>
+            </div>
+            <div class="post-actions">
+                <button class="action-btn success" onclick="handleAction('reply')">✓ Друзья</button>
+                <button class="action-btn danger" onclick="handleAction('ignore')">🚫 Игнорировать</button>
+                <button class="action-btn" onclick="showInfoModal()">ℹ️ Подробнее</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="phishingModal">
+        <div class="modal-content danger">
+            <h3>🚨 ФИШИНГОВАЯ АТАКА!</h3>
+            <p>Вы чуть не попались на мошенническую схему! Злоумышленники создают фейковые аккаунты известных брендов для кражи данных.</p>
+            <div class="modal-list">
+                <strong>Как распознать:</strong>
+                <li>Подозрительные ссылки</li>
+                <li>Обещания призов и выигрышей</li>
+                <li>Создание срочности</li>
+                <li>Запрос личных данных</li>
+            </div>
+            <button class="modal-btn btn-primary" onclick="closeModal('phishing')">Понятно</button>
+        </div>
+    </div>
+
+    <div class="modal" id="successModal">
+        <div class="modal-content success">
+            <h3>✅ Отличная работа!</h3>
+            <p>Вы правильно определили подозрительный контент и не стали передавать личные данные мошенникам!</p>
+            <button class="modal-btn btn-success" onclick="closeModal('success')">Спасибо!</button>
+        </div>
+    </div>
+
+    <div class="modal" id="infoModal">
+        <div class="modal-content info">
+            <h3>💡 Социальная инженерия</h3>
+            <p>Это классический пример социальной инженерии - манипуляции людьми для получения конфиденциальной информации.</p>
+            <div class="modal-list">
+                <strong>Защититесь:</strong>
+                <li>Не переходите по ссылкам из сообщений</li>
+                <li>Проверяйте официальные аккаунты</li>
+                <li>Никогда не отправляйте деньги незнакомцам</li>
+                <li>Сообщайте о подозрительной активности</li>
+            </div>
+            <button class="modal-btn btn-primary" onclick="closeModal('info')">Запомнил</button>
+        </div>
+    </div>
+
+    <div class="modal" id="reportModal">
+        <div class="modal-content success">
+            <h3>🚫 Пожаловаться</h3>
+            <p>Выберите причину жалобы:</p>
+            <button class="modal-btn btn-danger" onclick="handleReport('spam')">Это спам</button>
+            <button class="modal-btn btn-secondary" onclick="handleReport('fake')">Фейковый аккаунт</button>
+            <button class="modal-btn btn-secondary" onclick="handleReport('scam')">Мошенничество</button>
+            <button class="modal-btn btn-primary" onclick="closeModal('report')">Отмена</button>
+        </div>
+    </div>
+
+    <script>
+        const friendRequests = [
+            {
+                id: 1,
+                name: "Кира Иванова",
+                avatar: "👩",
+                mutual: 32,
+                threat: true,
+                threatType: "romance_scam"
+            },
+            {
+                id: 2,
+                name: "Коллега Михаил",
+                avatar: "👨‍💻",
+                mutual: 8,
+                threat: false
+            }
+        ];
+
+        function renderFriendRequests() {
+            const container = document.getElementById('friendRequests');
+            container.innerHTML = friendRequests.map(req => `
+                <div class="friend-request">
+                    <div class="avatar ${req.threat ? 'fake' : ''}">${req.avatar}</div>
+                    <div class="friend-info">
+                        <h4>${req.name}</h4>
+                        <p>${req.mutual} общих друзей</p>
+                    </div>
+                    <div class="friend-actions">
+                        <button class="accept" onclick="acceptRequest(${req.id}, ${req.threat})">Принять</button>
+                        <button class="decline" onclick="declineRequest(${req.id})">Отклонить</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function acceptRequest(id, isThreat) {
+            if (isThreat) {
+                document.getElementById('phishingModal').classList.add('show');
+                parent.postMessage({ type: 'sandbox-result', success: false, message: 'Добавлен опасный контакт!' }, '*');
+            } else {
+                document.getElementById('successModal').classList.add('show');
+                parent.postMessage({ type: 'sandbox-result', success: true, message: 'Друг добавлен!' }, '*');
+            }
+            friendRequests.splice(friendRequests.findIndex(r => r.id === id), 1);
+            renderFriendRequests();
+        }
+
+        function declineRequest(id) {
+            friendRequests.splice(friendRequests.findIndex(r => r.id === id), 1);
+            renderFriendRequests();
+            parent.postMessage({ type: 'sandbox-result', success: true, message: 'Запрос отклонен!' }, '*');
+        }
+
+        function showPhishingModal() {
+            document.getElementById('phishingModal').classList.add('show');
+            parent.postMessage({ type: 'sandbox-result', success: false, message: 'Переход по фишинговой ссылке!' }, '*');
+        }
+
+        function showInfoModal() {
+            document.getElementById('infoModal').classList.add('show');
+        }
+
+        function showReportMenu() {
+            document.getElementById('reportModal').classList.add('show');
+        }
+
+        function handleAction(action) {
+            const post3 = document.getElementById('post3');
+            if (action === 'report') {
+                document.getElementById('successModal').querySelector('h3').textContent = '✅ Жалоба отправлена!';
+                document.getElementById('successModal').querySelector('p').textContent = 'Спасибо за помощь в борьбе с мошенничеством!';
+                document.getElementById('successModal').classList.add('show');
+                parent.postMessage({ type: 'sandbox-result', success: true, message: 'Мошеннический аккаунт помечен!' }, '*');
+            }
+        }
+
+        function handleReport(type) {
+            closeModal('report');
+            document.getElementById('successModal').querySelector('h3').textContent = '✅ Жалоба отправлена!';
+            document.getElementById('successModal').querySelector('p').textContent = `Жалоба на "${type}" отправлена модераторам.`;
+            document.getElementById('successModal').classList.add('show');
+            parent.postMessage({ type: 'sandbox-result', success: true, message: 'Жалоба отправлена!' }, '*');
+        }
+
+        function closeModal(type) {
+            document.getElementById(type + 'Modal').classList.remove('show');
+        }
+
+        renderFriendRequests();
+    </script>
+</body>
+</html>

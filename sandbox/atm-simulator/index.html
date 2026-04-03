@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Банкомат - Сбербанк</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .atm {
+            background: linear-gradient(145deg, #e6e6e6 0%, #c0c0c0 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+        }
+        .screen {
+            background: #9dc88d;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .screen-header {
+            background: #1a5f2a;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            margin-bottom: 15px;
+        }
+        .screen-content {
+            color: #1a1a2e;
+            line-height: 1.6;
+        }
+        .screen-content h3 { margin-bottom: 15px; font-size: 1.1rem; }
+        .screen-content p { font-size: 0.95rem; }
+        .input-line {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            gap: 10px;
+        }
+        .input-field {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #1a5f2a;
+            border-radius: 5px;
+            font-size: 1rem;
+            background: #f5f5f5;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .key {
+            padding: 18px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            background: #2d3436;
+            color: white;
+        }
+        .key:hover { background: #636e72; }
+        .key:active { transform: scale(0.95); }
+        .key.action { background: #1a5f2a; }
+        .key.action:hover { background: #2d7a42; }
+        .key.cancel { background: #d63031; }
+        .key.cancel:hover { background: #e74c3c; }
+        .card-slot {
+            width: 100%;
+            height: 40px;
+            background: #2d3436;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #636e72;
+            font-size: 0.85rem;
+        }
+        .card-slot.has-card { background: #1a1a2e; color: #9dc88d; }
+        .cash-slot {
+            width: 100%;
+            height: 30px;
+            background: #2d3436;
+            border-radius: 0 0 10px 10px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #636e72;
+            font-size: 0.8rem;
+        }
+        .warning-box {
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .warning-box.show { display: block; }
+        .warning-box h4 { color: #856404; margin-bottom: 5px; }
+        .warning-box p { color: #856404; font-size: 0.9rem; }
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .overlay.show { display: flex; }
+        .overlay-danger { background: rgba(220,53,69,0.95); }
+        .overlay-success { background: rgba(40,167,69,0.95); }
+        .overlay-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 450px;
+        }
+        .overlay-content h2 { margin-bottom: 15px; font-size: 1.5rem; }
+        .overlay-content p { margin-bottom: 10px; line-height: 1.6; }
+        .overlay-content ul { text-align: left; background: #f8f9fa; padding: 15px 25px; border-radius: 8px; margin: 15px 0; }
+        .overlay-content li { margin-bottom: 8px; }
+        .overlay-content button {
+            margin-top: 15px;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            background: #1a5f2a;
+            color: white;
+        }
+        .skimmer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #3498db, #e74c3c);
+            animation: skim 2s infinite;
+            display: none;
+        }
+        @keyframes skim {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+        .camera-warning {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #d63031;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            display: none;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+    <div class="camera-warning" id="cameraWarning">⚠️ ВЕДЕТСЯ НАБЛЮДЕНИЕ</div>
+    
+    <div class="atm">
+        <div class="card-slot" id="cardSlot">💳 Вставьте карту</div>
+        <div class="screen" style="position:relative;">
+            <div class="skimmer" id="skimmer"></div>
+            <div class="screen-header">🏧 СБЕРБАНК</div>
+            <div class="warning-box" id="warningBox">
+                <h4>⚠️ Внимание!</h4>
+                <p>Проверьте банкомат на наличие посторонних устройств</p>
+            </div>
+            <div class="screen-content" id="screenContent">
+                <h3>Добро пожаловать!</h3>
+                <p>Выберите действие:</p>
+                <p style="margin-top:15px;">1️⃣ Снять наличные</p>
+                <p>2️⃣ Баланс</p>
+                <p>3️⃣ Оплата услуг</p>
+            </div>
+        </div>
+        <div class="keypad">
+            <button class="key" onclick="pressKey('1')">1</button>
+            <button class="key" onclick="pressKey('2')">2</button>
+            <button class="key" onclick="pressKey('3')">3</button>
+            <button class="key" onclick="pressKey('4')">4</button>
+            <button class="key" onclick="pressKey('5')">5</button>
+            <button class="key" onclick="pressKey('6')">6</button>
+            <button class="key" onclick="pressKey('7')">7</button>
+            <button class="key" onclick="pressKey('8')">8</button>
+            <button class="key" onclick="pressKey('9')">9</button>
+            <button class="key cancel" onclick="cancel()">✕</button>
+            <button class="key" onclick="pressKey('0')">0</button>
+            <button class="key action" onclick="confirm()">✓</button>
+        </div>
+        <div class="cash-slot" id="cashSlot">💵 Выдача наличных</div>
+    </div>
+
+    <div class="overlay overlay-danger" id="dangerOverlay">
+        <div class="overlay-content">
+            <h2>🚨 СКИММИНГ!</h2>
+            <p><strong>Вы обнаружили скиммер!</strong></p>
+            <p>Это устройство для кражи данных карты установлено мошенниками.</p>
+            <ul>
+                <li>Не используйте банкомат с подозрительными накладками</li>
+                <li>Закройте клавиатуру рукой при вводе PIN</li>
+                <li>Сообщите в банк о подозрительном банкомате</li>
+                <li>Используйте банкоматы внутри банков</li>
+            </ul>
+            <button onclick="closeOverlay('danger')">Понятно</button>
+        </div>
+    </div>
+
+    <div class="overlay overlay-success" id="successOverlay">
+        <div class="overlay-content">
+            <h2>✅ Безопасный банкомат!</h2>
+            <p><strong>Вы проверили банкомат и не обнаружили угроз.</strong></p>
+            <p>Помните правила безопасности:</p>
+            <ul>
+                <li>Проверяйте банкомат перед использованием</li>
+                <li>Используйте банкоматы в безопасных местах</li>
+                <li>Не принимайте помощь от незнакомцев</li>
+                <li>Не показывайте PIN-код</li>
+            </ul>
+            <button onclick="closeOverlay('success')">Спасибо</button>
+        </div>
+    </div>
+
+    <script>
+        let screen = document.getElementById('screenContent');
+        let cardInserted = false;
+        let inputBuffer = '';
+        let phase = 'welcome';
+
+        function insertCard() {
+            if (!cardInserted) {
+                cardInserted = true;
+                document.getElementById('cardSlot').classList.add('has-card');
+                document.getElementById('cardSlot').textContent = '💳 Карта вставлена';
+                screen.innerHTML = `
+                    <h3>Введите PIN-код</h3>
+                    <div style="font-size:1.5rem; letter-spacing:5px; margin:20px 0;">• • • •</div>
+                    <p style="color:#856404; font-size:0.85rem;">⚠️ Закройте клавиатуру рукой</p>
+                `;
+                
+                if (Math.random() > 0.5) {
+                    document.getElementById('skimmer').style.display = 'block';
+                    document.getElementById('warningBox').classList.add('show');
+                }
+            }
+        }
+
+        function pressKey(num) {
+            inputBuffer += num;
+            updateDisplay();
+        }
+
+        function cancel() {
+            if (phase === 'pin' && inputBuffer.length === 4) {
+                showSkimmerWarning();
+            } else {
+                inputBuffer = inputBuffer.slice(0, -1);
+                updateDisplay();
+            }
+        }
+
+        function confirm() {
+            if (phase === 'pin' && inputBuffer.length === 4) {
+                showSkimmerWarning();
+            }
+        }
+
+        function updateDisplay() {
+            const dots = '•'.repeat(inputBuffer.length) + '•'.repeat(4 - inputBuffer.length);
+            screen.innerHTML = `
+                <h3>Введите PIN-код</h3>
+                <div style="font-size:1.5rem; letter-spacing:5px; margin:20px 0;">${dots}</div>
+                <p style="color:#856404; font-size:0.85rem;">⚠️ Закройте клавиатуру рукой</p>
+            `;
+        }
+
+        function showSkimmerWarning() {
+            document.getElementById('skimmer').style.display = 'block';
+            document.getElementById('warningBox').classList.add('show');
+            document.getElementById('cameraWarning').style.display = 'block';
+            
+            setTimeout(() => {
+                document.getElementById('dangerOverlay').classList.add('show');
+                parent.postMessage({ type: 'sandbox-result', success: false, message: 'Внимание, скиммер!' }, '*');
+            }, 500);
+        }
+
+        document.getElementById('cardSlot').addEventListener('click', insertCard);
+
+        setTimeout(() => {
+            if (!cardInserted) {
+                document.getElementById('successOverlay').classList.add('show');
+                parent.postMessage({ type: 'sandbox-result', success: true, message: 'Банкомат проверен!' }, '*');
+            }
+        }, 30000);
+    </script>
+</body>
+</html>

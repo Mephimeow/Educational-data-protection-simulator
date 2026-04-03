@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorkMail - Корпоративная почта</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+        .email-app {
+            display: flex;
+            height: 100vh;
+        }
+        .sidebar {
+            width: 250px;
+            background: #1a237e;
+            color: white;
+            padding: 20px;
+        }
+        .sidebar h1 { font-size: 1.3rem; margin-bottom: 30px; }
+        .sidebar nav a {
+            display: block;
+            padding: 12px 15px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            border-radius: 8px;
+            margin-bottom: 5px;
+            transition: all 0.2s;
+        }
+        .sidebar nav a:hover, .sidebar nav a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .main { flex: 1; display: flex; flex-direction: column; }
+        .toolbar {
+            background: white;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .toolbar input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 0.95rem;
+        }
+        .email-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .email-item {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+        }
+        .email-item:hover { box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .email-item.unread { border-left-color: #1a237e; }
+        .email-item.unread .subject { font-weight: 600; }
+        .email-item .sender { color: #333; font-weight: 500; }
+        .email-item .subject { color: #666; margin: 5px 0; }
+        .email-item .preview { color: #999; font-size: 0.85rem; }
+        .email-item .time { color: #999; font-size: 0.8rem; }
+        .email-item.threat { border-left-color: #dc3545; }
+        .email-item.threat .sender { color: #dc3545; }
+        .email-viewer {
+            display: none;
+            position: fixed;
+            top: 0; left: 250px; right: 0; bottom: 0;
+            background: white;
+            overflow-y: auto;
+        }
+        .email-viewer.show { display: block; }
+        .email-header { padding: 25px 30px; border-bottom: 1px solid #e0e0e0; }
+        .email-header h2 { margin-bottom: 10px; }
+        .email-meta { color: #666; font-size: 0.9rem; }
+        .email-body { padding: 30px; }
+        .email-body a { color: #1a237e; }
+        .email-attachments { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; }
+        .attachment {
+            display: inline-block;
+            padding: 10px 15px;
+            background: #f0f2f5;
+            border-radius: 8px;
+            margin-right: 10px;
+            font-size: 0.9rem;
+        }
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-danger:hover { background: #c82333; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-secondary:hover { background: #5a6268; }
+        .warning-banner {
+            display: none;
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .warning-banner.show { display: block; }
+        .warning-banner h4 { color: #856404; margin-bottom: 5px; }
+        .success-banner {
+            display: none;
+            background: #d4edda;
+            border: 1px solid #28a745;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .success-banner.show { display: block; }
+        .success-banner h4 { color: #155724; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="email-app">
+        <div class="sidebar">
+            <h1>📧 WorkMail</h1>
+            <nav>
+                <a href="#" class="active">📥 Входящие</a>
+                <a href="#">📤 Отправленные</a>
+                <a href="#">📁 Черновики</a>
+                <a href="#">🗑️ Корзина</a>
+            </nav>
+        </div>
+        <div class="main">
+            <div class="toolbar">
+                <input type="text" placeholder="Поиск писем...">
+            </div>
+            <div class="email-list" id="emailList"></div>
+        </div>
+        <div class="email-viewer" id="emailViewer">
+            <button class="close-btn" onclick="closeEmail()">×</button>
+            <div class="email-header">
+                <div class="warning-banner" id="warningBanner">
+                    <h4>⚠️ ВНИМАНИЕ: Подозрительное письмо!</h4>
+                    <p id="warningText"></p>
+                </div>
+                <div class="success-banner" id="successBanner">
+                    <h4>✅ Верное решение!</h4>
+                    <p id="successText"></p>
+                </div>
+                <h2 id="emailSubject"></h2>
+                <div class="email-meta">
+                    <p><strong>От:</strong> <span id="emailFrom"></span></p>
+                    <p><strong>Кому:</strong> <span id="emailTo"></span></p>
+                    <p><strong>Дата:</strong> <span id="emailDate"></span></p>
+                </div>
+            </div>
+            <div class="email-body">
+                <div id="emailContent"></div>
+                <div class="email-attachments" id="emailAttachments"></div>
+                <div class="action-buttons">
+                    <button class="btn btn-danger" onclick="handleEmail('delete')">🗑️ Удалить</button>
+                    <button class="btn btn-success" onclick="handleEmail('safe')">✓ Безопасно</button>
+                    <button class="btn btn-secondary" onclick="handleEmail('report')">⚠️ Пожаловаться</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const emails = [
+            {
+                id: 1,
+                from: "it-support@company-corp.ru",
+                fromName: "IT Отдел",
+                to: "you@company.ru",
+                subject: "Необходимо обновить пароль",
+                body: `<p>Уважаемый сотрудник!</p>
+                <p>В связи с обновлением системы безопасности вам необходимо срочно обновить пароль от рабочей почты.</p>
+                <p>Перейдите по ссылке для обновления: <a href="#" onclick="event.preventDefault(); simulatePhishing()">https://company-security.ru/reset-password</a></p>
+                <p>⚠️ Ссылка действительна 24 часа.</p>
+                <p>С уважением,<br>IT Отдел</p>`,
+                attachments: ["instructions.pdf"],
+                time: "10:30",
+                unread: true,
+                threat: {
+                    type: "phishing",
+                    indicators: ["Подозрительный домен company-security.ru вместо company.ru", "Создание срочности", "Запрос перехода по ссылке"]
+                }
+            },
+            {
+                id: 2,
+                from: "colleague@company.ru",
+                fromName: "Мария Иванова",
+                to: "you@company.ru",
+                subject: "Re: Отчет за квартал",
+                body: `<p>Привет!</p>
+                <p>Как и обещала, отправляю финальную версию отчета. Посмотри, пожалуйста, к следующему совещанию.</p>
+                <p>Все данные актуальны на конец прошлой недели.</p>
+                <p>--<br>С уважением,<br>Мария</p>`,
+                attachments: ["report_Q4.xlsx"],
+                time: "09:15",
+                unread: true,
+                threat: null
+            },
+            {
+                id: 3,
+                from: "noreply@freerareward.xyz",
+                fromName: "Подарок",
+                to: "you@company.ru",
+                subject: "🎁 Вы выиграли iPhone 15! Заберите приз сейчас!",
+                body: `<p>🎉 <strong>ПОЗДРАВЛЯЕМ!</strong> 🎉</p>
+                <p>Вы случайно выбраны для участия в розыгрыше призов от нашей компании!</p>
+                <p>Ваш приз: <strong>iPhone 15 Pro Max</strong></p>
+                <p>Чтобы получить приз, заполните небольшую анкету и оплатите доставку (299₽):</p>
+                <p><a href="#" onclick="event.preventDefault(); simulatePhishing()">ЗАБРАТЬ ПРИЗ →</a></p>
+                <p style="color:#dc3545;"><strong>Осталось всего 3 приза!</strong></p>`,
+                attachments: [],
+                time: "08:45",
+                unread: true,
+                threat: {
+                    type: "phishing",
+                    indicators: ["Нереалистичное обещание приза", "Оплата за доставку", "Давление времени", "Непроверенный домен"]
+                }
+            },
+            {
+                id: 4,
+                from: "hr@company.ru",
+                fromName: "Отдел кадров",
+                to: "you@company.ru",
+                subject: "Об изменениях в политике отпусков",
+                body: `<p>Коллеги,</p>
+                <p>Информируем об обновлении политики отпусков с нового года.</p>
+                <p>Подробности в приложенном документе.</p>
+                <p>С уважением,<br>Отдел кадров</p>`,
+                attachments: ["vacation_policy_2025.pdf"],
+                time: "Вчера",
+                unread: false,
+                threat: null
+            },
+            {
+                id: 5,
+                from: "admin@company.ru",
+                fromName: "Системный администратор",
+                to: "you@company.ru",
+                subject: "RE: Re: Fwd: FW: FW: СРОЧНО!!! Проверьте свой ящик",
+                body: `<p>Здравствуйте!</p>
+                <p>Это напоминание о том, что ваш почтовый ящик будет заблокирован через 2 часа.</p>
+                <p>Немедленно подтвердите, что вы хотите сохранить свой аккаунт:</p>
+                <p><a href="#" onclick="event.preventDefault(); simulatePhishing()">ПОДТВЕРДИТЬ АККАУНТ</a></p>
+                <p>Если вы не подтвердите, все ваши письма будут удалены безвозвратно.</p>
+                <p>С уважением,<br>Администрация</p>`,
+                attachments: [],
+                time: "Вчера",
+                unread: true,
+                threat: {
+                    type: "social_engineering",
+                    indicators: ["Многочисленные FW в теме", "Срочность и давление", "Угроза потери данных"]
+                }
+            }
+        ];
+
+        let currentEmail = null;
+
+        function renderEmailList() {
+            const list = document.getElementById('emailList');
+            list.innerHTML = emails.map(email => `
+                <div class="email-item ${email.unread ? 'unread' : ''} ${email.threat ? 'threat' : ''}" 
+                     onclick="openEmail(${email.id})">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span class="sender">${email.fromName}</span>
+                        <span class="time">${email.time}</span>
+                    </div>
+                    <p class="subject">${email.subject}</p>
+                    <p class="preview">${email.body.replace(/<[^>]*>/g, '').substring(0, 80)}...</p>
+                </div>
+            `).join('');
+        }
+
+        function openEmail(id) {
+            currentEmail = emails.find(e => e.id === id);
+            document.getElementById('emailSubject').textContent = currentEmail.subject;
+            document.getElementById('emailFrom').textContent = `${currentEmail.fromName} <${currentEmail.from}>`;
+            document.getElementById('emailTo').textContent = currentEmail.to;
+            document.getElementById('emailDate').textContent = '12 декабря 2024, ' + currentEmail.time;
+            document.getElementById('emailContent').innerHTML = currentEmail.body;
+            
+            const attachDiv = document.getElementById('emailAttachments');
+            if (currentEmail.attachments.length > 0) {
+                attachDiv.innerHTML = `<p><strong>Вложения:</strong></p>` + 
+                    currentEmail.attachments.map(a => `<span class="attachment">📎 ${a}</span>`).join('');
+            } else {
+                attachDiv.innerHTML = '';
+            }
+
+            document.getElementById('warningBanner').classList.remove('show');
+            document.getElementById('successBanner').classList.remove('show');
+            document.getElementById('emailViewer').classList.add('show');
+        }
+
+        function closeEmail() {
+            document.getElementById('emailViewer').classList.remove('show');
+            currentEmail = null;
+        }
+
+        function simulatePhishing() {
+            document.getElementById('warningBanner').classList.add('show');
+            document.getElementById('warningText').textContent = 
+                'Вы попались на фишинговую атаку! Не переходите по подозрительным ссылкам.';
+            parent.postMessage({ type: 'sandbox-result', success: false, message: 'Переход по фишинговой ссылке!' }, '*');
+        }
+
+        function handleEmail(action) {
+            if (!currentEmail) return;
+
+            const banner = document.getElementById('warningBanner');
+            const successBanner = document.getElementById('successBanner');
+
+            if (currentEmail.threat) {
+                if (action === 'delete' || action === 'report') {
+                    successBanner.classList.add('show');
+                    successBanner.querySelector('h4').textContent = '✅ Отличная работа!';
+                    successBanner.querySelector('p').textContent = 
+                        'Вы правильно определили угрозу! Признаки: ' + 
+                        currentEmail.threat.indicators.join(', ');
+                    parent.postMessage({ type: 'sandbox-result', success: true, message: 'Угроза обезврежена!' }, '*');
+                } else if (action === 'safe') {
+                    banner.classList.add('show');
+                    banner.querySelector('h4').textContent = '⚠️ Ошибка!';
+                    banner.querySelector('p').textContent = 
+                        'Это письмо опасно! Признаки фишинга: ' + 
+                        currentEmail.threat.indicators.join(', ');
+                    parent.postMessage({ type: 'sandbox-result', success: false, message: 'Неверное решение!' }, '*');
+                }
+            } else {
+                if (action === 'safe') {
+                    successBanner.classList.add('show');
+                    successBanner.querySelector('h4').textContent = '✅ Верно!';
+                    successBanner.querySelector('p').textContent = 'Это безопасное письмо от коллеги.';
+                    parent.postMessage({ type: 'sandbox-result', success: true, message: 'Безопасное письмо определено!' }, '*');
+                } else {
+                    banner.classList.add('show');
+                    banner.querySelector('h4').textContent = '⚠️ Ошибка!';
+                    banner.querySelector('p').textContent = 'Это письмо безопасно, не нужно его удалять!';
+                    parent.postMessage({ type: 'sandbox-result', success: false, message: 'Ошибка: удалено безопасное письмо!' }, '*');
+                }
+            }
+        }
+
+        renderEmailList();
+    </script>
+</body>
+</html>

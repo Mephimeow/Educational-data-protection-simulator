@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -58,35 +57,10 @@ const (
 )
 
 type Scenario struct {
-	ID            string      `gorm:"primaryKey" json:"id"`
-	Title         string      `json:"title"`
-	Description   string      `json:"description"`
-	Environment   string      `json:"environment"`
-	ThreatType    ThreatType  `json:"threat_type"`
-	ThreatLevel   ThreatLevel `json:"threat_level"`
-	CorrectAction string      `json:"correct_action"`
-	CreatedAt     time.Time   `json:"created_at"`
-}
-
-type EmailMessage struct {
-	ID                string    `json:"id"`
-	FromEmail         string    `json:"from_email"`
-	FromName          string    `json:"from_name"`
-	Subject           string    `json:"subject"`
-	Body              string    `json:"body"`
-	Attachments       string    `json:"attachments"`
-	ReceivedAt        time.Time `json:"received_at"`
-	IsThreat          bool      `json:"is_threat"`
-	ThreatType        string    `json:"threat_type,omitempty"`
-	ThreatDescription string    `json:"threat_description,omitempty"`
-}
-
-type SocialMessage struct {
-	ID         string    `json:"id"`
-	FromUser   string    `json:"from_user"`
-	FromAvatar string    `json:"from_avatar"`
-	Content    string    `json:"content"`
-	Timestamp  time.Time `json:"timestamp"`
-	IsThreat   bool      `json:"is_threat"`
-	ThreatType string    `json:"threat_type,omitempty"`
+	ID          string      `gorm:"primaryKey" json:"id"`
+	Title       string      `json:"title"`
+	Description string      `json:"description"`
+	Environment string      `json:"environment"`
+	ThreatType  ThreatType  `json:"threat_type"`
+	ThreatLevel ThreatLevel `json:"threat_level"`
 }
