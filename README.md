@@ -52,12 +52,12 @@ docker-compose up -d --build
 
 ## API Endpoints
 
-`GET /` -  Проверка работы API 
-`GET /health` - Health check 
-`GET /api/scenarios` - Список всех сценариев 
-`GET /api/scenarios/:env` - Сценарии по среде 
-`GET /api/email/inbox` - Симулятор почты 
-`GET /api/social/feed` - Симулятор соцсетей 
+`GET /` -  Проверка работы API /
+`GET /health` - Health check  /
+`GET /api/scenarios` - Список всех сценариев / 
+`GET /api/scenarios/:env` - Сценарии по среде /
+`GET /api/email/inbox` - Симулятор почты /
+`GET /api/social/feed` - Симулятор соцсетей /
 
 ## Среды симуляции
 
