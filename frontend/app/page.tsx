@@ -3,7 +3,7 @@ import Link from "next/link"
 const scenarios = [
   {
     id: "office",
-    title: "🏢 Офис",
+    title: "Офис",
     description: "Сценарий: Рабочий день в офисе. Фишинговые письма, подозрительные USB-накопители, социальная инженерия.",
     icon: "🏢",
     color: "blue",
@@ -12,7 +12,7 @@ const scenarios = [
   },
   {
     id: "home",
-    title: "🏠 Дом",
+    title: "Дом",
     description: "Сценарий: Удалённая работа. Безопасность домашней сети, пароли, фишинг в мессенджерах.",
     icon: "🏠",
     color: "green",
@@ -21,7 +21,7 @@ const scenarios = [
   },
   {
     id: "public",
-    title: "📶 Общественный Wi-Fi",
+    title: "Общественный Wi-Fi",
     description: "Сценарий: Кафе и общественные места. Атаки \"злой двойник\", перехват трафика, скимминг.",
     icon: "📶",
     color: "purple",
