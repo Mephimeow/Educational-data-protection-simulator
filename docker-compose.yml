@@ -1,5 +1,5 @@
 services:
-  postgres:
+  postgres_go:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: cyberuser
@@ -17,7 +17,7 @@ services:
     volumes:
       - redis_data:/data
 
-  backend:
+  backend_go:
     build: ./backend
     ports:
       - "8001:8000"
@@ -28,7 +28,7 @@ services:
       - DB_NAME=cyberdb
       - DB_PORT=5432
     depends_on:
-      - postgres
+      - postgres_go
       - redis
 
   frontend:
@@ -38,8 +38,42 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://backend:8000
     depends_on:
-      - backend
+      - backend_go
+
+  postgres_java:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: myuser
+#      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD var is required in .env file}
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: db_java
+    volumes:
+      - postgres_java_data:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U pharmacy_app -d pharmacy_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    env_file:
+      - ./backendJava/.env
+    build: ./backendJava
+    container_name: backend_java
+    depends_on:
+      postgres_java:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5434/db_java
+      SPRING_DATASOURCE_USERNAME: myuser
 
 volumes:
   postgres_data:
   redis_data:
+  postgres_java_data:
