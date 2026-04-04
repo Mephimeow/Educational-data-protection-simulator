@@ -28,7 +28,7 @@ public class RegistrationService {
     @Transactional
     public void registerUser(RegistrationCommand cmd) {
         userRepository.findUserByEmail(cmd.email())
-                .ifPresent(_ -> {
+                .ifPresent(existingUser -> {
                     throw new UserAlreadyExistsException("User with stated email already exists: " + cmd.email());
                 });
 
@@ -37,6 +37,7 @@ public class RegistrationService {
             throw new PhoneAlreadyExistsException("User with stated phone already exists: " + cmd.phone());
         }
         User user = new User();
+        user.setName(cmd.name());
         user.setEmail(cmd.email());
         user.setPhone(normalizedPhone);
         user.setPasswordHash(passwordEncoder.encode(cmd.password()));

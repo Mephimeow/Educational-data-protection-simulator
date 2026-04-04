@@ -21,6 +21,9 @@ public class User {
     @Column(name = "id", nullable = false)
     private Integer id;
 
+    @Column(name = "name")
+    private String name;
+
     @Column(name = "email", nullable = false)
     private String email;
 

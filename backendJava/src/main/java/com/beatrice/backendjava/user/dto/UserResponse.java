@@ -4,6 +4,7 @@ import java.util.Set;
 
 public record UserResponse(
         Integer id,
+        String name,
         String email,
         String phone,
         Set<UserRoleResponse> userRoles

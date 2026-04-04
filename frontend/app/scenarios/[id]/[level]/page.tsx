@@ -191,7 +191,7 @@ const scenarios = {
         name: "Выбор сети",
         attack: "Evil Twin",
         theory: `
-          <h3>👻 Атака \"Злой двойник\" (Evil Twin)</h3>
+          <h3>👻 Атака "Злой двойник" (Evil Twin)</h3>
           <p>Злоумышленник создаёт поддельную точку доступа с привлекательным названием для перехвата данных.</p>
           
           <h4>⚠️ Как это работает:</h4>
@@ -274,8 +274,6 @@ const scenarios = {
   }
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001'
-
 export default function ScenarioLevelPage() {
   const params = useParams()
   const scenarioId = params.id as string
@@ -286,58 +284,11 @@ export default function ScenarioLevelPage() {
 
   const [result, setResult] = useState<{success: boolean; message: string} | null>(null)
   const [showTheory, setShowTheory] = useState(true)
-  const [completed, setCompleted] = useState(false)
-  const [sandboxRunning, setSandboxRunning] = useState(false)
-  const [sandboxLoading, setSandboxLoading] = useState(false)
-
-  const startSandbox = async () => {
-    if (!level?.sandbox) return
-    setSandboxLoading(true)
-    try {
-      const res = await fetch(`${API_URL}/api/v1/sandbox/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: level.sandbox })
-      })
-      const data = await res.json()
-      if (data.status === 'started' || data.status === 'already_running') {
-        setSandboxRunning(true)
-      }
-    } catch (err) {
-      console.error('Failed to start sandbox:', err)
-    } finally {
-      setSandboxLoading(false)
-    }
-  }
-
-  const stopSandbox = async () => {
-    if (!level?.sandbox) return
-    setSandboxLoading(true)
-    try {
-      const res = await fetch(`${API_URL}/api/v1/sandbox/stop`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: level.sandbox })
-      })
-      const data = await res.json()
-      if (data.status === 'stopped' || data.status === 'not_running') {
-        setSandboxRunning(false)
-      }
-    } catch (err) {
-      console.error('Failed to stop sandbox:', err)
-    } finally {
-      setSandboxLoading(false)
-    }
-  }
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'sandbox-result') {
         setResult(event.data)
-        setCompleted(true)
-        if (event.data.success) {
-          setShowTheory(false)
-        }
       }
     }
     window.addEventListener('message', handleMessage)
@@ -445,81 +396,18 @@ export default function ScenarioLevelPage() {
           </div>
 
           <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
-            <div className="bg-slate-700/50 px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <div className={`w-3 h-3 rounded-full ${sandboxRunning ? 'bg-green-500' : 'bg-slate-500'}`}></div>
-                  <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                </div>
-                <span className="text-slate-400 text-sm ml-4">
-                  Интерактивная среда — {level.sandbox}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                {sandboxRunning ? (
-                  <button
-                    onClick={stopSandbox}
-                    disabled={sandboxLoading}
-                    className="bg-red-500/20 hover:bg-red-500/30 text-red-400 px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition disabled:opacity-50"
-                  >
-                    {sandboxLoading ? '⏳' : '✕'} Остановить
-                  </button>
-                ) : (
-                  <button
-                    onClick={startSandbox}
-                    disabled={sandboxLoading}
-                    className="bg-green-500/20 hover:bg-green-500/30 text-green-400 px-3 py-1 rounded-lg text-sm flex items-center gap-2 transition disabled:opacity-50"
-                  >
-                    {sandboxLoading ? '⏳' : '▶'} Запустить
-                  </button>
-                )}
-              </div>
+            <div className="bg-slate-700/50 px-4 py-3">
+              <span className="text-slate-400 text-sm">
+                Интерактивная среда — {level.sandbox}
+              </span>
             </div>
             <div className="h-[600px] bg-slate-900">
-              {completed && result?.success ? (
-                <div className="h-full flex items-center justify-center text-center p-8">
-                  <div>
-                    <div className="text-6xl mb-4">✅</div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Задание выполнено!</h3>
-                    <p className="text-slate-400 mb-6">Вы успешно справились с заданием.</p>
-                    <Link 
-                      href={`/scenarios/${scenarioId}`}
-                      className="inline-block bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-6 py-3 rounded-xl transition"
-                    >
-                      Следующий уровень →
-                    </Link>
-                  </div>
-                </div>
-              ) : !sandboxRunning ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-8">
-                  <div className="text-6xl mb-4">🎮</div>
-                  <h3 className="text-xl font-bold text-white mb-2">Песочница остановлена</h3>
-                  <p className="text-slate-400 mb-6">Нажмите кнопку "Запустить" для начала работы</p>
-                  <button
-                    onClick={startSandbox}
-                    disabled={sandboxLoading}
-                    className="bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-6 py-3 rounded-xl transition disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {sandboxLoading ? (
-                      <>
-                        <span className="animate-spin">⏳</span> Запуск...
-                      </>
-                    ) : (
-                      <>
-                        ▶ Запустить песочницу
-                      </>
-                    )}
-                  </button>
-                </div>
-              ) : (
-                <iframe
-                  src={sandboxUrl}
-                  className="w-full h-full border-0"
-                  title="Interactive Sandbox"
-                  sandbox="allow-scripts allow-same-origin"
-                />
-              )}
+              <iframe
+                src={sandboxUrl}
+                className="w-full h-full border-0"
+                title="Interactive Sandbox"
+                sandbox="allow-scripts allow-same-origin"
+              />
             </div>
           </div>
         </div>

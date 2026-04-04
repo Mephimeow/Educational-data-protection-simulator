@@ -71,11 +71,13 @@ services:
       - app-network
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8010
+        NEXT_PUBLIC_AUTH_API_URL: http://localhost:8080
     ports:
       - "3001:3000"
-    environment:
-      - NEXT_PUBLIC_API_URL=http://backend_go:8010
     depends_on:
       - backend_go
     networks:

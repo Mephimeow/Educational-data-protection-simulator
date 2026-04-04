@@ -1,4 +1,9 @@
+'use client'
+
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useAuth } from "./lib/AuthContext"
+import { isAdmin } from "./lib/auth"
 
 const scenarios = [
   {
@@ -39,6 +44,14 @@ const attackTypes = [
 ]
 
 export default function Home() {
+  const { user, isAuthenticated, logout, loading } = useAuth()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    await logout()
+    router.push('/')
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <header className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-50">
@@ -47,10 +60,39 @@ export default function Home() {
             <span className="text-3xl">🛡️</span>
             <h1 className="text-2xl font-bold text-white">CyberSimulator</h1>
           </div>
-          <nav className="flex gap-6">
+          <nav className="flex gap-6 items-center">
             <Link href="/scenarios" className="text-slate-300 hover:text-white transition">Сценарии</Link>
             <Link href="/stats" className="text-slate-300 hover:text-white transition">Статистика</Link>
             <Link href="/about" className="text-slate-300 hover:text-white transition">О проекте</Link>
+            {!loading && isAdmin(user) && (
+              <Link href="/admin" className="text-purple-400 hover:text-purple-300 transition font-medium">
+                Админ
+              </Link>
+            )}
+            {!loading && (
+              isAuthenticated ? (
+                <div className="flex items-center gap-4 ml-4 pl-4 border-l border-slate-600">
+                  <span className="text-slate-300 text-sm">
+                    👤 {user?.name || 'Пользователь'}
+                  </span>
+                  <button
+                    onClick={handleLogout}
+                    className="text-red-400 hover:text-red-300 text-sm"
+                  >
+                    Выйти
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 ml-4 pl-4 border-l border-slate-600">
+                  <Link href="/login" className="text-cyan-400 hover:text-cyan-300 text-sm font-medium">
+                    Войти
+                  </Link>
+                  <Link href="/register" className="bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+                    Регистрация
+                  </Link>
+                </div>
+              )
+            )}
           </nav>
         </div>
       </header>
@@ -65,12 +107,21 @@ export default function Home() {
             Интерактивные сценарии с реальными угрозами. Изучайте, как распознавать атаки, 
             принимая решения в безопасной среде.
           </p>
-          <Link 
-            href="/scenarios" 
-            className="inline-block bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 py-4 rounded-xl transition transform hover:scale-105"
-          >
-            Начать обучение →
-          </Link>
+          {isAuthenticated ? (
+            <Link 
+              href="/scenarios" 
+              className="inline-block bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 py-4 rounded-xl transition transform hover:scale-105"
+            >
+              Продолжить обучение →
+            </Link>
+          ) : (
+            <Link 
+              href="/register" 
+              className="inline-block bg-cyan-500 hover:bg-cyan-600 text-white font-semibold px-8 py-4 rounded-xl transition transform hover:scale-105"
+            >
+              Начать обучение →
+            </Link>
+          )}
         </section>
 
         <section className="mb-16">
@@ -81,7 +132,7 @@ export default function Home() {
             {scenarios.map(scenario => (
               <Link 
                 key={scenario.id}
-                href={`/scenarios/${scenario.id}`}
+                href={isAuthenticated ? `/scenarios/${scenario.id}` : '/login'}
                 className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl p-6 hover:border-cyan-500/50 transition group"
               >
                 <div className="text-5xl mb-4">{scenario.icon}</div>
@@ -115,14 +166,14 @@ export default function Home() {
             <span>📚</span> Типы угроз
           </h3>
           <div className="grid md:grid-cols-5 gap-4">
-            {attackTypes.map(type => (
+            {attackTypes.map(typeItem => (
               <div 
-                key={type.id}
+                key={typeItem.id}
                 className="bg-slate-800/30 border border-slate-700 rounded-xl p-4 text-center"
               >
-                <div className="text-3xl mb-2">{type.icon}</div>
-                <h5 className="font-semibold text-white text-sm mb-1">{type.name}</h5>
-                <p className="text-slate-500 text-xs">{type.description}</p>
+                <div className="text-3xl mb-2">{typeItem.icon}</div>
+                <h5 className="font-semibold text-white text-sm mb-1">{typeItem.name}</h5>
+                <p className="text-slate-500 text-xs">{typeItem.description}</p>
               </div>
             ))}
           </div>
