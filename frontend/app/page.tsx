@@ -1,39 +1,21 @@
 'use client'
 
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useAuth } from "./lib/AuthContext"
 import { isAdmin } from "./lib/auth"
 
-const scenarios = [
-  {
-    id: "office",
-    title: "Офис",
-    description: "Сценарий: Рабочий день в офисе. Фишинговые письма, подозрительные USB-накопители, социальная инженерия.",
-    icon: "🏢",
-    color: "blue",
-    levels: 3,
-    attacks: ["phishing", "usb", "social_engineering"]
-  },
-  {
-    id: "home",
-    title: "Дом",
-    description: "Сценарий: Удалённая работа. Безопасность домашней сети, пароли, фишинг в мессенджерах.",
-    icon: "🏠",
-    color: "green",
-    levels: 3,
-    attacks: ["phishing", "password", "malware"]
-  },
-  {
-    id: "public",
-    title: "Общественный Wi-Fi",
-    description: "Сценарий: Кафе и общественные места. Атаки \"злой двойник\", перехват трафика, скимминг.",
-    icon: "📶",
-    color: "purple",
-    levels: 3,
-    attacks: ["evil_twin", "mitm", "skimming"]
-  }
-]
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+interface Scenario {
+  id: string
+  title: string
+  description: string
+  icon: string
+  color: string
+  levels?: { id: number }[]
+}
 
 const attackTypes = [
   { id: "phishing", name: "Фишинг", icon: "🎣", description: "Поддельные письма и сайты для кражи данных" },
@@ -46,6 +28,21 @@ const attackTypes = [
 export default function Home() {
   const { user, isAuthenticated, logout, loading } = useAuth()
   const router = useRouter()
+  const [scenarios, setScenarios] = useState<Scenario[]>([])
+
+  useEffect(() => {
+    fetchScenarios()
+  }, [])
+
+  const fetchScenarios = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/scenarios`)
+      const data = await res.json()
+      setScenarios(data.scenarios || [])
+    } catch (err) {
+      console.error('Failed to load scenarios:', err)
+    }
+  }
 
   const handleLogout = async () => {
     await logout()
@@ -67,6 +64,11 @@ export default function Home() {
             {!loading && isAdmin(user) && (
               <Link href="/admin" className="text-purple-400 hover:text-purple-300 transition font-medium">
                 Админ
+              </Link>
+            )}
+            {!loading && isAuthenticated && (
+              <Link href="/profile" className="text-slate-300 hover:text-white transition">
+                Профиль
               </Link>
             )}
             {!loading && (
@@ -140,21 +142,8 @@ export default function Home() {
                   {scenario.title}
                 </h4>
                 <p className="text-slate-400 text-sm mb-4">{scenario.description}</p>
-                <div className="flex flex-wrap gap-2">
-                  {scenario.attacks.map(attack => {
-                    const type = attackTypes.find(t => t.id === attack)
-                    return (
-                      <span 
-                        key={attack}
-                        className="bg-slate-700/50 text-slate-300 text-xs px-3 py-1 rounded-full"
-                      >
-                        {type?.icon} {type?.name}
-                      </span>
-                    )
-                  })}
-                </div>
                 <div className="mt-4 text-cyan-400 text-sm font-medium">
-                  {scenario.levels} уровня →
+                  {scenario.levels?.length || 0} уровней →
                 </div>
               </Link>
             ))}

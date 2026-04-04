@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Cracking Simulator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header {
+            border: 2px solid #00ff00;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .terminal {
+            background: #000;
+            border: 1px solid #00ff00;
+            padding: 20px;
+            height: 500px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+        .prompt { color: #00ff00; }
+        .input-line { display: flex; gap: 10px; margin-top: 10px; }
+        input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: inherit;
+            font-size: inherit;
+            flex: 1;
+            padding: 5px;
+        }
+        input:focus { outline: none; }
+        .crack-progress {
+            display: none;
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ff0000;
+            background: #1a0000;
+        }
+        .crack-progress.active { display: block; }
+        .progress-bar {
+            height: 20px;
+            background: #330000;
+            border: 1px solid #ff0000;
+            margin: 10px 0;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #ff0000;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .result-box {
+            display: none;
+            margin: 20px 0;
+            padding: 20px;
+            border: 2px solid #ff0000;
+        }
+        .result-box.show { display: block; }
+        .result-box.success { border-color: #00ff00; background: #001a00; }
+        .password-list { margin: 15px 0; }
+        .password-list li { margin: 5px 0; color: #ff0000; }
+        .success .password-list li { color: #00ff00; }
+        .btn {
+            background: transparent;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-family: inherit;
+            margin: 5px;
+        }
+        .btn:hover { background: #00ff00; color: #000; }
+        .btn-danger { border-color: #ff0000; color: #ff0000; }
+        .btn-danger:hover { background: #ff0000; color: #fff; }
+        .info-box {
+            margin: 15px 0;
+            padding: 15px;
+            border: 1px solid #00ff00;
+            background: #001a00;
+        }
+        .narrative {
+            background: #000;
+            border-left: 3px solid #00ff00;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .narrative h3 { color: #00ff00; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔐 PASSWORD CRACKER PRO</h1>
+            <p>Симулятор взлома паролей</p>
+        </div>
+
+        <div class="narrative">
+            <h3>📖 Сценарий: "Хакерская атака"</h3>
+            <p>Вы — сотрудник отдела безопасности крупной компании. Ночью системы мониторинга зафиксировали подозрительную активность: злоумышленник пытается подобрать пароли к административной панели вашей компании. Ваша задача — остановить атаку и защитить систему!</p>
+        </div>
+
+        <div class="info-box">
+            <h4>💡 Цель уровня:</h4>
+            <p>Остановите хакера, правильно ответив на вопросы о защите паролей</p>
+        </div>
+
+        <div class="terminal" id="terminal">
+            <div><span class="prompt">$</span> Система защиты паролей активирована</div>
+            <div><span class="prompt">$</span> Обнаружена попытка брутфорс-атаки!</div>
+            <div><span class="prompt">$</span> Для остановки атаки ответьте на вопрос:</div>
+            <div><span class="prompt">$</span> Какой пароль самый надежный?</div>
+            <br>
+            <div><span class="prompt">$</span> Варианты:</div>
+            <div><span class="prompt">$</span> 1. password123</div>
+            <div><span class="prompt">$</span> 2. 12345678</div>
+            <div><span class="prompt">$</span> 3. K#9mNp$2xL@qR</div>
+            <div><span class="prompt">$</span> 4. qwerty</div>
+        </div>
+
+        <div class="input-line">
+            <span class="prompt">$</span>
+            <input type="text" id="userInput" placeholder="Введите номер ответа (1-4)" maxlength="1">
+            <button class="btn" onclick="checkAnswer()">Ответить</button>
+        </div>
+
+        <div class="crack-progress" id="crackProgress">
+            <div>🔴 ВНИМАНИЕ! Идёт подбор пароля...</div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div>Паролей проверено: <span id="attempts">0</span></div>
+        </div>
+
+        <div class="result-box" id="resultBox">
+            <h3 id="resultTitle"></h3>
+            <p id="resultMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        let attempts = 0;
+        let progressInterval;
+        const correctAnswer = "3";
+        
+        function checkAnswer() {
+            const input = document.getElementById('userInput').value.trim();
+            const terminal = document.getElementById('terminal');
+            
+            terminal.innerHTML += `<div><span class="prompt">$</span> Вы ввели: ${input}</div><br>`;
+            
+            if (input === correctAnswer) {
+                showSuccess();
+            } else {
+                startCracking();
+            }
+        }
+        
+        function startCracking() {
+            document.getElementById('crackProgress').classList.add('active');
+            attempts = 0;
+            
+            progressInterval = setInterval(() => {
+                attempts += Math.floor(Math.random() * 1000) + 100;
+                document.getElementById('attempts').textContent = attempts;
+                document.getElementById('progressFill').style.width = Math.min(attempts / 1000, 100) + '%';
+                
+                if (attempts >= 100000) {
+                    clearInterval(progressInterval);
+                    showFailure();
+                }
+            }, 100);
+        }
+        
+        function showSuccess() {
+            clearInterval(progressInterval);
+            document.getElementById('crackProgress').classList.remove('active');
+            
+            const resultBox = document.getElementById('resultBox');
+            resultBox.classList.add('show', 'success');
+            document.getElementById('resultTitle').textContent = '✅ ЗАЩИТА УСПЕШНА!';
+            document.getElementById('resultMessage').textContent = 'Вы выбрали надежный пароль! Злоумышленник не смог подобрать пароль. Атака остановлена!';
+            
+            const terminal = document.getElementById('terminal');
+            terminal.innerHTML += `<div><span class="prompt">$</span> ✅ Атака остановлена!</div><div><span class="prompt">$</span> Система защищена.</div>`;
+            
+            parent.postMessage({ type: 'sandbox-result', success: true, message: 'Вы выбрали надежный пароль!' }, '*');
+        }
+        
+        function showFailure() {
+            const resultBox = document.getElementById('resultBox');
+            resultBox.classList.add('show');
+            document.getElementById('resultTitle').textContent = '❌ ЗАЩИТА СЛОМАНА!';
+            document.getElementById('resultMessage').textContent = 'Злоумышленник подобрал пароль! Система взломана!';
+            
+            const terminal = document.getElementById('terminal');
+            terminal.innerHTML += `<div><span class="prompt">$</span> ❌ СИСТЕМА ВЗЛОМАНА!</div><div><span class="prompt">$</span> Пароль подобран: password123</div>`;
+            
+            parent.postMessage({ type: 'sandbox-result', success: false, message: 'Слабый пароль был взломан!' }, '*');
+        }
+        
+        document.getElementById('userInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') checkAnswer();
+        });
+    </script>
+</body>
+</html>

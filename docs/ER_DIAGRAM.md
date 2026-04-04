@@ -141,12 +141,12 @@
 | icon | VARCHAR(10) | | League icon |
 
 ### USER_ACHIEVEMENTS
-| Column | Type | Constraints | Description |
-|--------|------|-------------|-------------|
-| id | UUID | PK | Unique identifier |
-| user_id | UUID | FK | User reference |
-| achievement_id | UUID | FK | Achievement reference |
-| earned_at | TIMESTAMP | DEFAULT NOW() | Earn date |
+|     Column     |    Type   |  Constraints  |      Description      |
+|----------------|-----------|---------------|-----------------------|
+|       id       |    UUID   |       PK      |    Unique identifier  |
+|    user_id     |    UUID   |       FK      |     User reference    |
+| achievement_id |    UUID   |       FK      | Achievement reference |
+|   earned_at    | TIMESTAMP | DEFAULT NOW() |       Earn date        
 
 ## Indexes
 

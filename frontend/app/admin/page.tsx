@@ -19,6 +19,7 @@ export default function AdminPanel() {
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [error, setError] = useState('')
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [activeTab, setActiveTab] = useState<'users' | 'scenarios'>('users')
 
   useEffect(() => {
     if (!loading && !isAdmin(user)) {
@@ -126,8 +127,31 @@ export default function AdminPanel() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-white">Панель администратора</h1>
+        </div>
+
+        <div className="flex gap-4 mb-8 border-b border-slate-700">
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2 font-medium transition ${
+              activeTab === 'users'
+                ? 'text-cyan-400 border-b-2 border-cyan-400'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            👥 Пользователи
+          </button>
+          <Link
+            href="/admin/scenarios"
+            className="px-4 py-2 font-medium text-slate-400 hover:text-white transition"
+          >
+            📚 Сценарии
+          </Link>
+        </div>
+
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-3xl font-bold text-white">Управление пользователями</h1>
+          <h2 className="text-xl font-semibold text-white">Управление пользователями</h2>
           <button
             onClick={fetchUsers}
             className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg transition"

@@ -1,42 +1,56 @@
-import Link from "next/link"
+'use client'
 
-const scenarios = [
-  {
-    id: "office",
-    title: "Офис",
-    description: "Рабочий день в офисе. Фишинговые письма, подозрительные USB-накопители, социальная инженерия.",
-    levels: [
-      { id: 1, name: "Утренняя почта", attack: "Фишинг", icon: "📧" },
-      { id: 2, name: "USB-флешка", attack: "Вредоносное ПО", icon: "💾" },
-      { id: 3, name: "Звонок \"IT-поддержки\"", attack: "Социальная инженерия", icon: "📞" },
-    ],
-    color: "blue"
-  },
-  {
-    id: "home",
-    title: "Дом",
-    description: "Удалённая работа. Безопасность домашней сети, пароли, фишинг в мессенджерах.",
-    levels: [
-      { id: 1, name: "Письмо из \"банка\"", attack: "Фишинг", icon: "🏦" },
-      { id: 2, name: "Сильный пароль", attack: "Безопасность паролей", icon: "🔐" },
-      { id: 3, name: "Обновление системы", attack: "Социальная инженерия", icon: "⚙️" },
-    ],
-    color: "green"
-  },
-  {
-    id: "public",
-    title: "Общественный Wi-Fi",
-    description: "Кафе и общественные места. Атаки \"злой двойник\", перехват трафика, скимминг.",
-    levels: [
-      { id: 1, name: "Выбор сети", attack: "Evil Twin", icon: "📶" },
-      { id: 2, name: "Банкомат", attack: "Скимминг", icon: "🏧" },
-      { id: 3, name: "Работа в кафе", attack: "Перехват данных", icon: "☕" },
-    ],
-    color: "purple"
-  }
-]
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+interface Level {
+  id: number
+  name: string
+  attack: string
+  icon: string
+  difficulty: string
+  order: number
+}
+
+interface Scenario {
+  id: string
+  title: string
+  description: string
+  icon: string
+  color: string
+  levels?: Level[]
+}
 
 export default function ScenariosPage() {
+  const [scenarios, setScenarios] = useState<Scenario[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchScenarios()
+  }, [])
+
+  const fetchScenarios = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/scenarios`)
+      const data = await res.json()
+      setScenarios(data.scenarios || [])
+    } catch (err) {
+      console.error('Failed to load scenarios:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white">Загрузка...</div>
+      </div>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
       <header className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700">
@@ -60,7 +74,7 @@ export default function ScenariosPage() {
             >
               <div className="p-6 border-b border-slate-700">
                 <div className="flex items-center gap-4">
-                  <div className="text-5xl">{scenario.id === 'office' ? '🏢' : scenario.id === 'home' ? '🏠' : '📶'}</div>
+                  <div className="text-5xl">{scenario.icon}</div>
                   <div>
                     <h2 className="text-2xl font-bold text-white">{scenario.title}</h2>
                     <p className="text-slate-400">{scenario.description}</p>
@@ -70,7 +84,7 @@ export default function ScenariosPage() {
               <div className="p-6">
                 <h3 className="text-lg font-semibold text-white mb-4">Уровни:</h3>
                 <div className="grid md:grid-cols-3 gap-4">
-                  {scenario.levels.map(level => (
+                  {scenario.levels?.map(level => (
                     <Link
                       key={level.id}
                       href={`/scenarios/${scenario.id}/${level.id}`}
@@ -79,7 +93,7 @@ export default function ScenariosPage() {
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-3xl">{level.icon}</span>
                         <span className="bg-cyan-500/20 text-cyan-400 text-xs px-3 py-1 rounded-full">
-                          Уровень {level.id}
+                          Уровень {level.order}
                         </span>
                       </div>
                       <h4 className="font-semibold text-white group-hover:text-cyan-400 transition mb-1">

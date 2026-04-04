@@ -1,31 +1,18 @@
+version: '3.8'
+
 services:
-  postgres_go:
+  postgres:
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: cyberuser
-      POSTGRES_PASSWORD: cyberpass
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: cyberdb
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5436:5432"
-    networks:
-      - app-network
-
-  postgres_java:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: db_java
-    volumes:
-      - postgres_java_data:/var/lib/postgresql/data
-    ports:
-      - "5435:5432"
-    networks:
-      - app-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U myuser -d db_java"]
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -36,98 +23,37 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    networks:
-      - app-network
 
-  backend_go:
-    build: ./backend
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     ports:
-      - "8010:8000"
-    environment:
-      - DB_HOST=postgres_go
-      - DB_USER=cyberuser
-      - DB_PASSWORD=cyberpass
-      - DB_NAME=cyberdb
-      - DB_PORT=5432
+      - "8000:8000"
     depends_on:
-      - postgres_go
-      - redis
-    networks:
-      - app-network
-
-  app:
-    build: ./backendJava
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres_java:5432/db_java
-      - SPRING_DATASOURCE_USERNAME=myuser
-      - SPRING_DATASOURCE_PASSWORD=mypassword
-      - JWT_SECRET=${JWT_SECRET:-defaultSecretKeyForDevelopment123456789}
-    depends_on:
-      postgres_java:
+      postgres:
         condition: service_healthy
-    networks:
-      - app-network
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=cyberdb
+      - JWT_SECRET=dev-secret-key-12345
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
 
   frontend:
     build:
       context: ./frontend
-      args:
-        NEXT_PUBLIC_API_URL: http://localhost:8010
-        NEXT_PUBLIC_AUTH_API_URL: http://localhost:8080
+      dockerfile: Dockerfile
     ports:
       - "3001:3000"
     depends_on:
-      - backend_go
-    networks:
-      - app-network
-
-  sandbox-phishing:
-    build: ./sandbox/phishing
-    ports:
-      - "9081:80"
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  sandbox-email:
-    build: ./sandbox/email-client
-    ports:
-      - "9082:80"
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  sandbox-wifi:
-    build: ./sandbox/wifi-hotspot
-    ports:
-      - "9083:80"
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  sandbox-social:
-    build: ./sandbox/social-network
-    ports:
-      - "9084:80"
-    networks:
-      - app-network
-    restart: unless-stopped
-
-  sandbox-atm:
-    build: ./sandbox/atm-simulator
-    ports:
-      - "9085:80"
-    networks:
-      - app-network
-    restart: unless-stopped
-
-networks:
-  app-network:
-    driver: bridge
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
 
 volumes:
   postgres_data:
   redis_data:
-  postgres_java_data:

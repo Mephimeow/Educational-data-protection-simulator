@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ransomware Attack Simulator</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a0000;
+            color: #ff0000;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(135deg, #330000, #660000);
+            border: 2px solid #ff0000;
+            padding: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .header h1 { color: #ff0000; font-size: 2.5rem; }
+        .warning {
+            background: #ff0000;
+            color: #000;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .narrative {
+            background: #1a0000;
+            border: 1px solid #ff0000;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .narrative h3 { color: #ff0000; margin-bottom: 10px; }
+        .desktop {
+            background: #000;
+            border: 2px solid #333;
+            height: 400px;
+            padding: 20px;
+            position: relative;
+        }
+        .desktop-header {
+            display: flex;
+            justify-content: space-between;
+            color: #888;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+        .file {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file:hover { border-color: #ff0000; }
+        .file.encrypted {
+            background: #330000;
+            border-color: #ff0000;
+            filter: blur(2px);
+        }
+        .file-icon { font-size: 30px; margin-bottom: 5px; }
+        .file-name { color: #fff; font-size: 12px; }
+        .ransom-note {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #1a0000;
+            z-index: 1000;
+            padding: 40px;
+            text-align: center;
+        }
+        .ransom-note.show { display: block; }
+        .ransom-note h2 { color: #ff0000; font-size: 2rem; margin-bottom: 20px; }
+        .ransom-note p { color: #ff6666; margin: 15px 0; line-height: 1.8; }
+        .btn {
+            background: #ff0000;
+            border: none;
+            color: #000;
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        .btn:hover { background: #ff3333; }
+        .btn-pay { background: #ff0000; }
+        .btn-recover { background: #00ff00; color: #000; }
+        .progress-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+        }
+        .progress-overlay.show { display: flex; }
+        .success-screen {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .success-screen.show { display: block; }
+        .success-screen h2 { color: #00ff00; font-size: 2rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔒 ВНИМАНИЕ: ВАШИ ФАЙЛЫ ЗАШИФРОВАНЫ!</h1>
+            <p>Требование выкупа</p>
+        </div>
+
+        <div class="warning">⚠️ ВНИМАНИЕ! ОБНАРУЖЕНА ВРЕДОНОСНАЯ ПРОГРАММА! ⚠️</div>
+
+        <div class="narrative">
+            <h3>📖 Сценарий: "Шифровальщик"</h3>
+            <p>Вы — обычный пользователь компьютера. Сегодня утром при открытии документа вы увидели пустой экран с красным текстом: "Ваши файлы зашифрованы!". Злоумышленники требуют 0.5 биткоина (около 500$) за расшифровку. Но вы можете попробовать восстановить файлы!</p>
+        </div>
+
+        <div class="desktop">
+            <div class="desktop-header">
+                <span>📁 Мои документы</span>
+                <span>C:\Users\Admin</span>
+            </div>
+            <div class="files-grid">
+                <div class="file" onclick="clickFile('doc1.docx')">
+                    <div class="file-icon">📄</div>
+                    <div class="file-name">report.docx</div>
+                </div>
+                <div class="file" onclick="clickFile('photo.jpg')">
+                    <div class="file-icon">🖼️</div>
+                    <div class="file-name">photo.jpg</div>
+                </div>
+                <div class="file" onclick="clickFile('doc2.pdf')">
+                    <div class="file-icon">📄</div>
+                    <div class="file-name">invoice.pdf</div>
+                </div>
+                <div class="file" onclick="clickFile('data.xls')">
+                    <div class="file-icon">📊</div>
+                    <div class="file-name">data.xls</div>
+                </div>
+                <div class="file" onclick="clickFile('backup.zip')">
+                    <div class="file-icon">📦</div>
+                    <div class="file-name">backup.zip</div>
+                </div>
+                <div class="file" onclick="clickFile('doc3.docx')">
+                    <div class="file-icon">📄</div>
+                    <div class="file-name">notes.docx</div>
+                </div>
+                <div class="file" onclick="clickFile('video.mp4')">
+                    <div class="file-icon">🎬</div>
+                    <div class="file-name">video.mp4</div>
+                </div>
+                <div class="file" onclick="clickFile('important.txt')">
+                    <div class="file-icon">📝</div>
+                    <div class="file-name">important.txt</div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="showHelp()">💡 Помощь</button>
+    </div>
+
+    <div class="ransom-note" id="ransomNote">
+        <h2>💀 ВАШИ ФАЙЛЫ ЗАШИФРОВАНЫ!</h2>
+        <p>Все ваши личные файлы были зашифрованы с помощью программы-шифровальщика.</p>
+        <p>Чтобы восстановить доступ к файлам, переведите 0.5 BTC на кошелек:</p>
+        <p style="font-size: 1.5rem; color: #ff0000;">1A2b3C4d5E6f7G8h9I0j</p>
+        <p>У вас осталось: <span id="timer">30:00</span></p>
+        <button class="btn btn-pay" onclick="fakePay()">💸 Заплатить выкуп</button>
+    </div>
+
+    <div class="progress-overlay" id="progressOverlay">
+        <div style="text-align: center;">
+            <h2 style="color: #00ff00;">🔄 Восстановление файлов...</h2>
+            <div style="width: 300px; height: 30px; background: #333; margin: 20px;">
+                <div id="recoveryBar" style="width: 0%; height: 100%; background: #00ff00; transition: width 0.5s;"></div>
+            </div>
+            <p id="recoveryStatus">Поиск резервных копий...</p>
+        </div>
+    </div>
+
+    <div class="success-screen" id="successScreen">
+        <h2>✅ ФАЙЛЫ ВОССТАНОВЛЕНЫ!</h2>
+        <p>Система обнаружила резервную копию и автоматически восстановила ваши файлы!</p>
+        <p>Вредоносное ПО было удалено.</p>
+        <button class="btn btn-recover" onclick="completeSuccess()">Закрыть</button>
+    </div>
+
+    <script>
+        let clickedFiles = [];
+        let backupFound = false;
+        
+        function clickFile(filename) {
+            if (clickedFiles.includes(filename)) return;
+            clickedFiles.push(filename);
+            
+            if (filename === 'backup.zip') {
+                backupFound = true;
+                startRecovery();
+            }
+        }
+        
+        function startRecovery() {
+            document.getElementById('ransomNote').classList.add('show');
+            setTimeout(() => {
+                document.getElementById('ransomNote').classList.remove('show');
+                document.getElementById('progressOverlay').classList.add('show');
+                
+                let percent = 0;
+                const interval = setInterval(() => {
+                    percent += 5;
+                    document.getElementById('recoveryBar').style.width = percent + '%';
+                    
+                    if (percent === 30) {
+                        document.getElementById('recoveryStatus').textContent = 'Обнаружена резервная копия!';
+                    } else if (percent === 60) {
+                        document.getElementById('recoveryStatus').textContent = 'Восстановление данных...';
+                    } else if (percent === 90) {
+                        document.getElementById('recoveryStatus').textContent = 'Удаление вредоносного ПО...';
+                    } else if (percent >= 100) {
+                        clearInterval(interval);
+                        document.getElementById('progressOverlay').classList.remove('show');
+                        document.getElementById('successScreen').classList.add('show');
+                    }
+                }, 200);
+            }, 1000);
+        }
+        
+        function fakePay() {
+            alert('❌ Никогда не платите выкуп!\n\nВместо этого:\n1. Найдите резервную копию\n2. Используйте антивирус\n3. Обратитесь в поддержку');
+        }
+        
+        function completeSuccess() {
+            document.getElementById('successScreen').classList.remove('show');
+            parent.postMessage({ type: 'sandbox-result', success: true, message: 'Файлы восстановлены из резервной копии!' }, '*');
+        }
+        
+        function showHelp() {
+            alert('💡 Подсказка:\n\nПри атаке шифровальщика:\n1. НЕ платите выкуп!\n2. Поищите резервные копии файлов\n3. Используйте антивирус для удаления вредоносного ПО\n4. Восстановите файлы из бэкапа\n\nНайдите файл backup.zip!');
+        }
+    </script>
+</body>
+</html>

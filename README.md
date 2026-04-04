@@ -10,45 +10,56 @@
 
 - 📚 Теория перед каждым заданием
 - 🎮 Интерактивные песочницы в отдельных Docker-контейнерах
-- 🎯 3 нарративных сценария (Офис, Дом, Общественный Wi-Fi)
+- 🎯 Динамические сценарии (управляются через админку)
 - 🛡️ 6 типов угроз (фишинг, социальная инженерия, скимминг и др.)
-- 📊 Статистика прогресса
+- 📊 Статистика прогресса пользователей
+- 👥 Система ролей (USER, ADMIN)
+- 🔐 JWT-аутентификация
+- ⚙️ Динамическое управление сценариями через админ-панель
 
 ## Технологический стек
 
 - **Frontend**: Next.js 14, React, Tailwind CSS, TypeScript
-- **Backend**: Go 1.25, Gin
-- **Database**: PostgreSQL, Redis
+- **Backend Go**: Go 1.25, Gin, GORM, PostgreSQL
+- **Backend Java**: Spring Boot 4, JWT, PostgreSQL
+- **Database**: PostgreSQL 15
+- **Cache**: Redis 7
 - **Sandbox**: Docker, Nginx
 - **Container**: Docker Compose
 
 ## Структура проекта
 
 ```
-├── docker-compose.yml          # Основной (с песочницами)
-├── backend/
+├── docker-compose.yml          # Основной compose файл
+├── backend/                   # Go API (сценарии, уровни)
 │   ├── cmd/main.go            # Точка входа
-│   ├── internal/
-│   │   ├── api/handler.go     # API endpoints
-│   │   └── models/models.go   # Модели данных
-│   └── docs/
-│       ├── API.md             # Документация API
-│       └── openapi.yaml       # OpenAPI спецификация
-├── frontend/
+│   └── internal/
+│       ├── api/handler.go      # API endpoints
+│       └── models/models.go   # Модели данных (GORM)
+├── backendJava/              # Java API (аутентификация)
+│   └── src/main/java/
+│       └── com/beatrice/backendjava/
+│           ├── auth/          # JWT аутентификация
+│           ├── user/          # Пользователи, роли
+│           ├── stats/         # Статистика прогресса
+│           └── admin/         # Управление
+├── frontend/                 # Next.js приложение
 │   ├── app/
-│   │   ├── page.tsx           # Главная
+│   │   ├── page.tsx          # Главная
 │   │   ├── scenarios/         # Сценарии
-│   │   ├── stats/             # Статистика
-│   │   └── about/             # О проекте
+│   │   ├── stats/            # Статистика
+│   │   ├── profile/         # Профиль пользователя
+│   │   ├── admin/           # Админ-панель
+│   │   │   ├── page.tsx     # Управление пользователями
+│   │   │   └── scenarios/   # Управление сценариями
+│   │   └── (auth)/          # Страницы входа
 │   └── Dockerfile
-├── sandbox/                   # Песочницы
-│   ├── phishing/              # Симуляция фишинга
-│   ├── email-client/          # Email клиент
-│   ├── wifi-hotspot/          # Wi-Fi атаки
-│   ├── social-network/        # Социальные сети
-│   └── atm-simulator/         # Банкоматы
-└── docs/
-    └── ER_DIAGRAM.md          # ER-диаграмма БД
+└── sandbox/                 # Песочницы
+    ├── phishing/              # Симуляция фишинга
+    ├── email-client/          # Email клиент
+    ├── wifi-hotspot/          # Wi-Fi атаки
+    ├── social-network/        # Социальные сети
+    └── atm-simulator/         # Банкоматы
 ```
 
 ## Быстрый старт
@@ -61,19 +72,120 @@
 ### Запуск
 
 ```bash
-docker-compose up -d --build
+sudo docker-compose up -d --build
 ```
 
 ### Доступ
 
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8001
-- Песочницы (запускаются по кнопке):
-  - phishing: http://localhost:9081
-  - email-client: http://localhost:9082
-  - wifi-hotspot: http://localhost:9083
-  - social-network: http://localhost:9084
-  - atm-simulator: http://localhost:9085
+| Сервис | URL | Описание |
+|--------|-----|---------|
+| Frontend | http://localhost:3001 | Основной интерфейс |
+| Go API | http://localhost:8010 | API сценариев и уровней |
+| Java API | http://localhost:8080 | API аутентификации |
+| Admin | admin@cybersim.ru / admin123 | Админ-панель |
+
+### Песочницы (постоянно запущены)
+
+| Песочница | URL |
+|-----------|-----|
+| Phishing | http://localhost:9081 |
+| Email Client | http://localhost:9082 |
+| Wi-Fi Hotspot | http://localhost:9083 |
+| Social Network | http://localhost:9084 |
+| ATM Simulator | http://localhost:9085 |
+
+## Архитектура
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                      Frontend (Next.js)                   │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌───────┐ │
+│  │  Users   │  │ Scenarios│  │  Stats   │  │ Admin │ │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬───┘ │
+└───────┼──────────────┼──────────────┼──────────────┼────┘
+        │              │              │              │
+        ▼              │              │              │
+┌───────────────┐      │              │              │
+│  Java API     │      │              │              │
+│  (Auth/JWT)  │      │              │              │
+│  :8080        │      │              │              │
+└───────┬───────┘      │              │              │
+        │              │              │              │
+        ▼              ▼              │              │
+┌─────────────────┐ ┌──────────┐      │              │
+│ PostgreSQL Java │ │ Redis    │      │              │
+│ (users, roles,  │ │ (JWT)    │      │              │
+│  stats)         │ └──────────┘      │              │
+└─────────────────┘                   │              │
+                                     ▼              │
+                           ┌──────────────────┐    │
+                           │     Go API        │    │
+                           │  (Scenarios)      │    │
+                           │     :8010         │    │
+                           └────────┬───────────┘    │
+                                    │                │
+                                    ▼                │
+                           ┌──────────────────┐      │
+                           │ PostgreSQL Go     │      │
+                           │ (scenarios,       │◄─────┘
+                           │  levels)          │   (CRUD)
+                           └──────────────────┘
+```
+
+## API Endpoints
+
+### Go API (сценарии и уровни)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/scenarios` | Все сценарии |
+| GET | `/api/v1/scenarios/:id` | Сценарий по ID |
+| POST | `/api/v1/scenarios` | Создать сценарий |
+| PUT | `/api/v1/scenarios/:id` | Обновить сценарий |
+| DELETE | `/api/v1/scenarios/:id` | Удалить сценарий |
+| GET | `/api/v1/scenarios/:id/levels` | Уровни сценария |
+| GET | `/api/v1/levels/:id` | Уровень по ID |
+| POST | `/api/v1/levels` | Создать уровень |
+| PUT | `/api/v1/levels/:id` | Обновить уровень |
+| DELETE | `/api/v1/levels/:id` | Удалить уровень |
+| GET | `/api/v1/attacks` | Типы атак |
+| GET | `/api/v1/tips` | Советы по безопасности |
+
+### Java API (аутентификация и пользователи)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Регистрация |
+| POST | `/api/auth/login` | Вход |
+| POST | `/api/auth/logout` | Выход |
+| POST | `/api/auth/refresh` | Обновить токен |
+| GET | `/api/users/whoami` | Текущий пользователь |
+| GET | `/api/users/profile` | Профиль |
+| PUT | `/api/users/profile` | Обновить профиль |
+| GET | `/api/stats/me` | Статистика пользователя |
+| POST | `/api/stats/complete` | Записать прохождение |
+
+### Java API (админ)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/admin/users` | Все пользователи |
+| DELETE | `/api/admin/users/:id` | Удалить пользователя |
+| POST | `/api/admin/users/:id/roles` | Изменить роли |
+| GET | `/api/stats/admin/all` | Статистика всех |
+
+## Роли и права
+
+### USER
+- Прохождение сценариев и уровней
+- Просмотр своей статистики
+- Редактирование профиля
+
+### ADMIN
+- Всё что у USER
+- Управление пользователями (удаление, роли)
+- Управление сценариями и уровнями
+- Просмотр статистики всех пользователей
 
 ## Разработка
 
@@ -85,7 +197,7 @@ npm install
 npm run dev
 ```
 
-### Backend
+### Backend Go
 
 ```bash
 cd backend
@@ -93,59 +205,9 @@ go mod tidy
 go run cmd/main.go
 ```
 
-## API Endpoints
+### Backend Java (в Docker)
 
-### Основные
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Health check |
-| GET | `/api/v1/scenarios` | Все сценарии |
-| GET | `/api/v1/scenarios/:id` | Сценарий по ID |
-| GET | `/api/v1/scenarios/:id/levels` | Уровни сценария |
-| GET | `/api/v1/scenarios/:id/levels/:levelId` | Детали уровня |
-| GET | `/api/v1/attacks` | Типы атак |
-| GET | `/api/v1/tips` | Советы по безопасности |
-
-### Управление песочницами
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/sandbox/list` | Список песочниц |
-| POST | `/api/v1/sandbox/start` | Запустить песочницу |
-| POST | `/api/v1/sandbox/stop` | Остановить песочницу |
-| GET | `/api/v1/sandbox/status/:name` | Статус песочницы |
-
-**Запуск/остановка:**
-```bash
-curl -X POST http://localhost:8001/api/v1/sandbox/start \
-  -H "Content-Type: application/json" \
-  -d '{"name": "email-client"}'
-
-curl -X POST http://localhost:8001/api/v1/sandbox/stop \
-  -H "Content-Type: application/json" \
-  -d '{"name": "email-client"}'
-```
-
-## Сценарии и уровни
-
-### 🏢 Офис
-
-1. Утренняя почта — Фишинг
-2. USB-флешка — Вредоносное ПО
-3. Звонок IT-поддержки — Социальная инженерия
-
-### 🏠 Дом
-
-1. Письмо из банка — Фишинг
-2. Сильный пароль — Безопасность паролей
-3. Обновление системы — Социальная инженерия
-
-### 📶 Общественный Wi-Fi
-
-1. Выбор сети — Evil Twin
-2. Банкомат — Скимминг
-3. Работа в кафе — Перехват данных
+Java бэкенд собирается внутри Docker при `docker-compose up --build`
 
 ## Типы угроз (CWE)
 
@@ -157,12 +219,6 @@ curl -X POST http://localhost:8001/api/v1/sandbox/stop \
 | skimming | Скимминг | CWE-312 |
 | password | Подбор пароля | CWE-307, CWE-521 |
 | malware | Вредоносное ПО | CWE-94, CWE-506 |
-
-## Документация
-
-- [API Documentation](./backend/docs/API.md)
-- [OpenAPI Spec](./backend/docs/openapi.yaml)
-- [ER Diagram](./docs/ER_DIAGRAM.md)
 
 ## Безопасность
 

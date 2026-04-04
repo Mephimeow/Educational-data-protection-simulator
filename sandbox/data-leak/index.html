@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Leak Investigation</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(135deg, #1e3a5f, #0d2137);
+            border: 2px solid #ff6b6b;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .header h1 { color: #ff6b6b; }
+        .narrative {
+            background: #0d2137;
+            border-left: 3px solid #ff6b6b;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .narrative h3 { color: #ff6b6b; margin-bottom: 10px; }
+        .investigation-board {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        .log-panel {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            padding: 20px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #222;
+        }
+        .log-entry.suspicious { color: #ff6b6b; background: #1a0000; }
+        .log-entry.normal { color: #00ff00; }
+        .log-entry.warning { color: #ffaa00; }
+        .sidebar {
+            background: #0d2137;
+            border: 1px solid #333;
+            padding: 20px;
+        }
+        .file-list {
+            margin-top: 20px;
+        }
+        .file-item {
+            background: #1e3a5f;
+            border: 1px solid #333;
+            padding: 10px;
+            margin: 5px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .file-item:hover { border-color: #ff6b6b; }
+        .file-item.leaked { border-color: #ff6b6b; background: #1a0000; }
+        .btn {
+            background: #ff6b6b;
+            border: none;
+            color: #000;
+            padding: 10px 20px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background: #ff5252; }
+        .result-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .result-modal.show { display: flex; }
+        .modal-content {
+            background: #1a1a2e;
+            border: 2px solid #ff6b6b;
+            padding: 30px;
+            max-width: 500px;
+            text-align: center;
+        }
+        .modal-content h2 { color: #ff6b6b; margin-bottom: 20px; }
+        .modal-content p { margin: 15px 0; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 РАССЛЕДОВАНИЕ УТЕЧКИ ДАННЫХ</h1>
+            <p>Forensic Lab</p>
+        </div>
+
+        <div class="narrative">
+            <h3>📖 Сценарий: "Красный код"</h3>
+            <p>Вы — специалист по кибербезопасности в крупной компании. Руководство получило письмо от неизвестного: "Мы украли ваши данные. Заплатите 10000$ или данные будут опубликованы". У вас есть логи сервера за последние 24 часа. Ваша задача — найти источник утечки и предотвратить катастрофу!</p>
+        </div>
+
+        <div class="investigation-board">
+            <div class="log-panel" id="logPanel">
+                <div class="log-entry normal">[08:00] System boot</div>
+                <div class="log-entry normal">[08:15] User John logged in</div>
+                <div class="log-entry normal">[08:30] Database backup started</div>
+                <div class="log-entry normal">[09:00] Morning standup meeting</div>
+                <div class="log-entry warning">[10:15] ⚠️ Unknown IP detected: 192.168.1.105</div>
+                <div class="log-entry normal">[10:30] User Alice downloaded report.pdf</div>
+                <div class="log-entry suspicious">[11:00] 🔴 Large data export initiated - 500MB</div>
+                <div class="log-entry normal">[11:15] User Bob uploaded invoice.xls</div>
+                <div class="log-entry warning">[11:45] ⚠️ Multiple failed login attempts</div>
+                <div class="log-entry suspicious">[12:00] 🔴 Admin account modified</div>
+                <div class="log-entry normal">[12:30] Lunch break</div>
+                <div class="log-entry suspicious">[13:00] 🔴 Data transfer to external IP: 45.33.22.11</div>
+                <div class="log-entry normal">[14:00] Regular operations</div>
+                <div class="log-entry warning">[14:30] ⚠️ Unusual database query pattern</div>
+                <div class="log-entry suspicious">[15:00] 🔴 Root access granted</div>
+                <div class="log-entry normal">[16:00] End of workday</div>
+            </div>
+
+            <div class="sidebar">
+                <h3>📁 Подозрительные файлы</h3>
+                <div class="file-list">
+                    <div class="file-item" onclick="analyzeFile('config.json')">
+                        <div>config.json</div>
+                        <small style="color:#888;">Изменён: 11:00</small>
+                    </div>
+                    <div class="file-item" onclick="analyzeFile('users.db')">
+                        <div>users.db</div>
+                        <small style="color:#888;">Изменён: 13:00</small>
+                    </div>
+                    <div class="file-item" onclick="analyzeFile('logs.txt')">
+                        <div>logs.txt</div>
+                        <small style="color:#888;">Изменён: 15:00</small>
+                    </div>
+                    <div class="file-item" onclick="analyzeFile('export.csv')">
+                        <div>export.csv</div>
+                        <small style="color:#ff6b6b;">Создан: 11:00 - 150MB</small>
+                    </div>
+                    <div class="file-item" onclick="analyzeFile('backdoor.py')">
+                        <div>backdoor.py</div>
+                        <small style="color:#ff6b6b;">Создан: 12:00</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button class="btn" onclick="showHint()">💡 Подсказка</button>
+    </div>
+
+    <div class="result-modal" id="resultModal">
+        <div class="modal-content">
+            <h2 id="resultTitle"></h2>
+            <p id="resultMessage"></p>
+            <button class="btn" onclick="closeModal()">Закрыть</button>
+        </div>
+    </div>
+
+    <script>
+        let foundLeak = false;
+        let foundBackdoor = false;
+        
+        function analyzeFile(filename) {
+            const modal = document.getElementById('resultModal');
+            const title = document.getElementById('resultTitle');
+            const message = document.getElementById('resultMessage');
+            
+            if (filename === 'export.csv') {
+                foundLeak = true;
+                title.textContent = '🔴 ИСТОЧНИК УТЕЧКИ НАЙДЕН!';
+                message.textContent = 'Файл export.csv содержит 150MB данных клиентов! Это экспортированная база данных. Время создания: 11:00 - совпадает с подозрительной активностью в логах.';
+                modal.classList.add('show');
+            } else if (filename === 'backdoor.py') {
+                foundBackdoor = true;
+                title.textContent = '🔴 ОБНАРУЖЕН БЭКДОР!';
+                message.textContent = 'Фаил backdoor.py - это вредоносный скрипт, созданный злоумышленником для удалённого доступа к системе!';
+                modal.classList.add('show');
+            } else {
+                title.textContent = '✅ Файл безопасен';
+                message.textContent = 'Этот файл не связан с утечкой данных.';
+                modal.classList.add('show');
+            }
+            
+            checkComplete();
+        }
+        
+        function checkComplete() {
+            setTimeout(() => {
+                if (foundLeak && foundBackdoor) {
+                    parent.postMessage({ type: 'sandbox-result', success: true, message: 'Утечка данных обнаружена и локализована!' }, '*');
+                }
+            }, 1000);
+        }
+        
+        function closeModal() {
+            document.getElementById('resultModal').classList.remove('show');
+        }
+        
+        function showHint() {
+            alert('💡 Подсказка:\n\nИщите:\n1. Файлы большого размера\n2. Недавно созданные файлы\n3. Подозрительные скрипты\n\nОбратите внимание на export.csv и backdoor.py!');
+        }
+    </script>
+</body>
+</html>

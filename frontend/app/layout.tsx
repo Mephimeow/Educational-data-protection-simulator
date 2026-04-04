@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
+import Providers from './Providers'
 import './globals.css'
-import { AuthProvider } from './lib/AuthContext'
 
 export const metadata: Metadata = {
   title: 'CyberSimulator',
@@ -15,9 +15,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   )

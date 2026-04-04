@@ -1,4 +1,4 @@
-const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:8080'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 function normalizePhone(phone: string): string {
   let normalized = phone.replace(/[\s\-\(\)]/g, '')
@@ -23,12 +23,9 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  accessToken: string
-}
-
-export interface UserRoleResponse {
-  id: number
-  roleName: string
+  access_token: string
+  refresh_token: string
+  user: User
 }
 
 export interface User {
@@ -36,38 +33,38 @@ export interface User {
   name: string
   email: string
   phone: string
-  userRoles: UserRoleResponse[]
+  roles: string[]
+  created_at: string
 }
 
 class AuthService {
   private accessToken: string | null = null
 
   async login(data: LoginRequest): Promise<AuthResponse> {
-    const res = await fetch(`${AUTH_API_URL}/api/auth/login`, {
+    const res = await fetch(`${API_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify(data),
     })
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: 'Login failed' }))
-      throw new Error(error.message || 'Login failed')
+      const error = await res.json().catch(() => ({ error: 'Login failed' }))
+      throw new Error(error.error || 'Login failed')
     }
 
     const response: AuthResponse = await res.json()
-    this.accessToken = response.accessToken
+    this.accessToken = response.access_token
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', response.accessToken)
+      localStorage.setItem('accessToken', response.access_token)
+      localStorage.setItem('refreshToken', response.refresh_token)
     }
     return response
   }
 
-  async register(data: RegisterRequest): Promise<void> {
-    const res = await fetch(`${AUTH_API_URL}/api/auth/register`, {
+  async register(data: RegisterRequest): Promise<AuthResponse> {
+    const res = await fetch(`${API_URL}/api/v1/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
       body: JSON.stringify({
         ...data,
         phone: normalizePhone(data.phone),
@@ -75,40 +72,61 @@ class AuthService {
     })
 
     if (!res.ok) {
-      const error = await res.json().catch(() => ({ message: 'Registration failed' }))
-      throw new Error(error.message || 'Registration failed')
+      const error = await res.json().catch(() => ({ error: 'Registration failed' }))
+      throw new Error(error.error || 'Registration failed')
     }
+
+    const response: AuthResponse = await res.json()
+    this.accessToken = response.access_token
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('accessToken', response.access_token)
+      localStorage.setItem('refreshToken', response.refresh_token)
+    }
+    return response
   }
 
   async logout(): Promise<void> {
-    await fetch(`${AUTH_API_URL}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    })
+    const refreshToken = this.getRefreshToken()
+    if (refreshToken) {
+      await fetch(`${API_URL}/api/v1/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      })
+    }
     this.accessToken = null
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
     }
   }
 
   async refresh(): Promise<AuthResponse> {
-    const res = await fetch(`${AUTH_API_URL}/api/auth/refresh`, {
+    const refreshToken = this.getRefreshToken()
+    if (!refreshToken) {
+      throw new Error('No refresh token')
+    }
+
+    const res = await fetch(`${API_URL}/api/v1/auth/refresh`, {
       method: 'POST',
-      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: refreshToken }),
     })
 
     if (!res.ok) {
       this.accessToken = null
       if (typeof window !== 'undefined') {
         localStorage.removeItem('accessToken')
+        localStorage.removeItem('refreshToken')
       }
       throw new Error('Refresh failed')
     }
 
     const response: AuthResponse = await res.json()
-    this.accessToken = response.accessToken
+    this.accessToken = response.access_token
     if (typeof window !== 'undefined') {
-      localStorage.setItem('accessToken', response.accessToken)
+      localStorage.setItem('accessToken', response.access_token)
+      localStorage.setItem('refreshToken', response.refresh_token)
     }
     return response
   }
@@ -119,11 +137,10 @@ class AuthService {
       throw new Error('Not authenticated')
     }
 
-    const res = await fetch(`${AUTH_API_URL}/api/users/whoami`, {
+    const res = await fetch(`${API_URL}/api/v1/users/me`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
-      credentials: 'include',
     })
 
     if (!res.ok) {
@@ -141,6 +158,13 @@ class AuthService {
     return null
   }
 
+  getRefreshToken(): string | null {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('refreshToken')
+    }
+    return null
+  }
+
   isAuthenticated(): boolean {
     return this.getAccessToken() !== null
   }
@@ -149,7 +173,7 @@ class AuthService {
 export const authService = new AuthService()
 
 export function getRoles(user: User | null): string[] {
-  return user?.userRoles?.map(r => r.roleName) || []
+  return user?.roles || []
 }
 
 export function hasRole(user: User | null, role: string): boolean {
@@ -162,4 +186,49 @@ export function isAdmin(user: User | null): boolean {
 
 export function isUser(user: User | null): boolean {
   return hasRole(user, 'USER')
+}
+
+export interface ScenarioProgress {
+  scenario_id: string
+  scenario_name: string
+  total_levels: number
+  completed: number
+  success: number
+}
+
+export interface UserStats {
+  total_scenarios: number
+  completed_levels: number
+  success_rate: number
+  progress: ScenarioProgress[]
+}
+
+export async function getUserStats(): Promise<UserStats> {
+  const token = authService.getAccessToken()
+  if (!token) throw new Error('Not authenticated')
+  
+  const res = await fetch(`${API_URL}/api/v1/stats/me`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  })
+  
+  if (!res.ok) throw new Error('Failed to fetch stats')
+  return res.json()
+}
+
+export async function recordLevelComplete(scenarioId: string, levelId: number, success: boolean): Promise<void> {
+  const token = authService.getAccessToken()
+  if (!token) throw new Error('Not authenticated')
+  
+  const res = await fetch(`${API_URL}/api/v1/stats/complete`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ scenario_id: scenarioId, level_id: levelId, success }),
+  })
+  
+  if (!res.ok) throw new Error('Failed to record progress')
 }

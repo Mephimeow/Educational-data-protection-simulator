@@ -1,42 +1,59 @@
-"use client"
+'use client'
 
-import Link from "next/link"
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { useParams } from "next/navigation"
 
-const scenarios = {
-  office: {
-    title: "🏢 Офис",
-    description: "Рабочий день в офисе. Фишинговые письма, подозрительные USB-накопители, социальная инженерия.",
-    levels: [
-      { id: 1, name: "Утренняя почта", attack: "Фишинг", icon: "📧", difficulty: "Легко" },
-      { id: 2, name: "USB-флешка", attack: "Вредоносное ПО", icon: "💾", difficulty: "Средне" },
-      { id: 3, name: "Звонок \"IT-поддержки\"", attack: "Социальная инженерия", icon: "📞", difficulty: "Средне" },
-    ],
-  },
-  home: {
-    title: "🏠 Дом",
-    description: "Удалённая работа. Безопасность домашней сети, пароли, фишинг в мессенджерах.",
-    levels: [
-      { id: 1, name: "Письмо из \"банка\"", attack: "Фишинг", icon: "🏦", difficulty: "Легко" },
-      { id: 2, name: "Сильный пароль", attack: "Безопасность паролей", icon: "🔐", difficulty: "Легко" },
-      { id: 3, name: "Обновление системы", attack: "Социальная инженерия", icon: "⚙️", difficulty: "Средне" },
-    ],
-  },
-  public: {
-    title: "📶 Общественный Wi-Fi",
-    description: "Кафе и общественные места. Атаки \"злой двойник\", перехват трафика, скимминг.",
-    levels: [
-      { id: 1, name: "Выбор сети", attack: "Evil Twin", icon: "📶", difficulty: "Легко" },
-      { id: 2, name: "Банкомат", attack: "Скимминг", icon: "🏧", difficulty: "Средне" },
-      { id: 3, name: "Работа в кафе", attack: "Перехват данных", icon: "☕", difficulty: "Средне" },
-    ],
-  }
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+interface Level {
+  id: number
+  name: string
+  attack: string
+  icon: string
+  difficulty: string
+  order: number
+}
+
+interface Scenario {
+  id: string
+  title: string
+  description: string
+  icon: string
+  color: string
+  levels?: Level[]
 }
 
 export default function ScenarioPage() {
   const params = useParams()
   const scenarioId = params.id as string
-  const scenario = scenarios[scenarioId as keyof typeof scenarios]
+  const [scenario, setScenario] = useState<Scenario | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchScenario()
+  }, [scenarioId])
+
+  const fetchScenario = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/v1/scenarios/${scenarioId}`)
+      if (!res.ok) throw new Error('Not found')
+      const data = await res.json()
+      setScenario(data)
+    } catch (err) {
+      console.error('Failed to load scenario:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="text-white">Загрузка...</div>
+      </div>
+    )
+  }
 
   if (!scenario) {
     return (
@@ -50,8 +67,6 @@ export default function ScenarioPage() {
       </div>
     )
   }
-
-  const icon = scenarioId === 'office' ? '🏢' : scenarioId === 'home' ? '🏠' : '📶'
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -67,7 +82,7 @@ export default function ScenarioPage() {
 
       <div className="max-w-6xl mx-auto px-6 py-12">
         <div className="flex items-center gap-4 mb-8">
-          <div className="text-6xl">{icon}</div>
+          <div className="text-6xl">{scenario.icon}</div>
           <div>
             <h1 className="text-3xl font-bold text-white">{scenario.title}</h1>
             <p className="text-slate-400">{scenario.description}</p>
@@ -75,7 +90,7 @@ export default function ScenarioPage() {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {scenario.levels.map(level => (
+          {scenario.levels?.map(level => (
             <Link
               key={level.id}
               href={`/scenarios/${scenarioId}/${level.id}`}
@@ -92,7 +107,7 @@ export default function ScenarioPage() {
                 </span>
               </div>
               <div className="mb-2">
-                <span className="text-cyan-400 text-sm">Уровень {level.id}</span>
+                <span className="text-cyan-400 text-sm">Уровень {level.order}</span>
               </div>
               <h3 className="text-xl font-bold text-white mb-2 group-hover:text-cyan-400 transition">
                 {level.name}
