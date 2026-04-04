@@ -41,11 +41,11 @@
 │   │   ├── stats/             # Статистика
 │   │   └── about/             # О проекте
 │   └── Dockerfile
-├── sandbox/                    # Песочницы
+├── sandbox/                   # Песочницы
 │   ├── phishing/              # Симуляция фишинга
 │   ├── email-client/          # Email клиент
 │   ├── wifi-hotspot/          # Wi-Fi атаки
-│   ├── social-network/       # Социальные сети
+│   ├── social-network/        # Социальные сети
 │   └── atm-simulator/         # Банкоматы
 └── docs/
     └── ER_DIAGRAM.md          # ER-диаграмма БД

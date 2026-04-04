@@ -1,5 +1,5 @@
 services:
-  postgres:
+  postgres_go:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: cyberuser
@@ -8,9 +8,27 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5433:5432"
+      - "5436:5432"
     networks:
       - app-network
+
+  postgres_java:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: db_java
+    volumes:
+      - postgres_java_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U myuser -d db_java"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -21,30 +39,45 @@ services:
     networks:
       - app-network
 
-  backend:
+  backend_go:
     build: ./backend
     ports:
-      - "8001:8000"
+      - "8010:8000"
     environment:
-      - DB_HOST=postgres
+      - DB_HOST=postgres_go
       - DB_USER=cyberuser
       - DB_PASSWORD=cyberpass
       - DB_NAME=cyberdb
       - DB_PORT=5432
     depends_on:
-      - postgres
+      - postgres_go
       - redis
+    networks:
+      - app-network
+
+  app:
+    build: ./backendJava
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres_java:5432/db_java
+      - SPRING_DATASOURCE_USERNAME=myuser
+      - SPRING_DATASOURCE_PASSWORD=mypassword
+      - JWT_SECRET=${JWT_SECRET:-defaultSecretKeyForDevelopment123456789}
+    depends_on:
+      postgres_java:
+        condition: service_healthy
     networks:
       - app-network
 
   frontend:
     build: ./frontend
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=http://backend_go:8010
     depends_on:
-      - backend
+      - backend_go
     networks:
       - app-network
 
@@ -95,3 +128,4 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  postgres_java_data:
