@@ -1,8 +1,10 @@
 package api
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/cyber-simulator/backend/internal/models"
 	"github.com/gin-gonic/gin"
@@ -10,15 +12,37 @@ import (
 )
 
 func GetScenarios(c *gin.Context) {
+	if cached, err := GetCachedScenarios(); err == nil && cached != nil {
+		var scenarios interface{}
+		if json.Unmarshal(cached, &scenarios) == nil {
+			c.JSON(http.StatusOK, gin.H{"scenarios": scenarios, "cached": true})
+			return
+		}
+	}
+
 	var scenarios []models.Scenario
 	models.DB.Preload("Levels", func(db *gorm.DB) *gorm.DB {
 		return db.Order("\"order\" ASC")
 	}).Find(&scenarios)
+
+	if data, err := json.Marshal(scenarios); err == nil {
+		SetCachedScenarios(data, 5*time.Minute)
+	}
+
 	c.JSON(http.StatusOK, gin.H{"scenarios": scenarios})
 }
 
 func GetScenarioById(c *gin.Context) {
 	id := c.Param("id")
+
+	if cached, err := GetCachedScenario(id); err == nil && cached != nil {
+		var scenario interface{}
+		if json.Unmarshal(cached, &scenario) == nil {
+			c.JSON(http.StatusOK, gin.H{"scenario": scenario, "cached": true})
+			return
+		}
+	}
+
 	var scenario models.Scenario
 	result := models.DB.Preload("Levels", func(db *gorm.DB) *gorm.DB {
 		return db.Order("\"order\" ASC")
@@ -28,6 +52,11 @@ func GetScenarioById(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Scenario not found"})
 		return
 	}
+
+	if data, err := json.Marshal(scenario); err == nil {
+		SetCachedScenario(id, data, 5*time.Minute)
+	}
+
 	c.JSON(http.StatusOK, scenario)
 }
 
@@ -38,6 +67,7 @@ func CreateScenario(c *gin.Context) {
 		return
 	}
 	models.DB.Create(&scenario)
+	InvalidateScenarioCache()
 	c.JSON(http.StatusCreated, scenario)
 }
 
@@ -56,6 +86,7 @@ func UpdateScenario(c *gin.Context) {
 	}
 
 	models.DB.Model(&scenario).Updates(updates)
+	InvalidateScenarioCache()
 	c.JSON(http.StatusOK, scenario)
 }
 
@@ -63,6 +94,7 @@ func DeleteScenario(c *gin.Context) {
 	id := c.Param("id")
 	models.DB.Delete(&models.Scenario{}, "id = ?", id)
 	models.DB.Delete(&models.Level{}, "scenario_id = ?", id)
+	InvalidateScenarioCache()
 	c.JSON(http.StatusOK, gin.H{"message": "Scenario deleted"})
 }
 

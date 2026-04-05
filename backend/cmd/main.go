@@ -1,19 +1,9 @@
-// @title CyberSimulator API
-// @version 1.0
-// @description Educational cybersecurity simulator API
-// @termsOfService http://swagger.io/terms/
-
-// @license.name MIT
-// @license.url https://opensource.org/licenses/MIT
-
-// @host localhost:8000
-// @BasePath /
-// @schemes http
 package main
 
 import (
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/cyber-simulator/backend/internal/api"
@@ -31,10 +21,12 @@ func main() {
 
 	r := gin.Default()
 
-	origins := []string{}
-	for _, o := range parseOrigins(allowedOrigins) {
-		origins = append(origins, o)
-	}
+	redisHost := getEnv("REDIS_HOST", "redis")
+	redisPort := getEnv("REDIS_PORT", "6379")
+	api.InitRedisCache(redisHost, redisPort)
+	api.InitWebSocket()
+
+	origins := parseOrigins(allowedOrigins)
 	if len(origins) == 0 {
 		origins = []string{"http://localhost:3001", "http://frontend:3000", "http://backend:3000"}
 	}
@@ -65,6 +57,11 @@ func main() {
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok"})
+	})
+
+	r.GET("/ws", api.WebSocketHandler)
+	r.GET("/api/v1/live-stats", api.RateLimiter(60, time.Minute), func(c *gin.Context) {
+		c.JSON(200, api.GetLiveStats())
 	})
 
 	r.GET("/swagger/*any", swaggo.WrapHandler(swagfiles.NewHandler()))
@@ -107,6 +104,20 @@ func main() {
 			stats.POST("/complete", api.AuthMiddleware(jwtSecret), statsHandler.CompleteLevel)
 		}
 
+		gamification := apiV1.Group("/gamification")
+		{
+			gamification.GET("/achievements", api.AuthMiddleware(jwtSecret), api.GetAchievements)
+			gamification.GET("/stats", api.AuthMiddleware(jwtSecret), api.GetUserStats)
+			gamification.GET("/leaderboard", api.GetLeaderboard)
+			gamification.POST("/complete-level", api.AuthMiddleware(jwtSecret), api.CompleteLevelWithXP)
+		}
+
+		threat := apiV1.Group("/threat")
+		{
+			threat.POST("/check", api.ThreatCheck)
+			threat.GET("/intel", api.GetThreatIntel)
+		}
+
 		admin := apiV1.Group("/admin")
 		admin.Use(api.AuthMiddleware(jwtSecret))
 		admin.Use(api.AdminMiddleware())
@@ -144,28 +155,11 @@ func parseOrigins(origins string) []string {
 		return []string{}
 	}
 	var result []string
-	for _, o := range splitAndTrim(origins, ",") {
-		if o != "" {
-			result = append(result, o)
+	for _, o := range strings.Split(origins, ",") {
+		trimmed := strings.TrimSpace(o)
+		if trimmed != "" {
+			result = append(result, trimmed)
 		}
-	}
-	return result
-}
-
-func splitAndTrim(s, sep string) []string {
-	var result []string
-	start := 0
-	for i := 0; i <= len(s)-len(sep); i++ {
-		if s[i:i+len(sep)] == sep {
-			if start < i {
-				result = append(result, s[start:i])
-			}
-			start = i + len(sep)
-			i += len(sep) - 1
-		}
-	}
-	if start < len(s) {
-		result = append(result, s[start:])
 	}
 	return result
 }

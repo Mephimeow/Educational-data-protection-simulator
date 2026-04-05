@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useAuth } from "./lib/AuthContext"
 import { isAdmin } from "./lib/auth"
 
@@ -26,8 +25,7 @@ const attackTypes = [
 ]
 
 export default function Home() {
-  const { user, isAuthenticated, logout, loading } = useAuth()
-  const router = useRouter()
+  const { user, isAuthenticated, loading } = useAuth()
   const [scenarios, setScenarios] = useState<Scenario[]>([])
 
   useEffect(() => {
@@ -44,61 +42,8 @@ export default function Home() {
     }
   }
 
-  const handleLogout = async () => {
-    await logout()
-    router.push('/')
-  }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-      <header className="bg-slate-800/80 backdrop-blur-sm border-b border-slate-700 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <span className="text-3xl">🛡️</span>
-            <h1 className="text-2xl font-bold text-white">CyberSimulator</h1>
-          </div>
-          <nav className="flex gap-6 items-center">
-            <Link href="/scenarios" className="text-slate-300 hover:text-white transition">Сценарии</Link>
-            <Link href="/stats" className="text-slate-300 hover:text-white transition">Статистика</Link>
-            <Link href="/about" className="text-slate-300 hover:text-white transition">О проекте</Link>
-            {!loading && isAdmin(user) && (
-              <Link href="/admin" className="text-purple-400 hover:text-purple-300 transition font-medium">
-                Админ
-              </Link>
-            )}
-            {!loading && isAuthenticated && (
-              <Link href="/profile" className="text-slate-300 hover:text-white transition">
-                Профиль
-              </Link>
-            )}
-            {!loading && (
-              isAuthenticated ? (
-                <div className="flex items-center gap-4 ml-4 pl-4 border-l border-slate-600">
-                  <span className="text-slate-300 text-sm">
-                    👤 {user?.name || 'Пользователь'}
-                  </span>
-                  <button
-                    onClick={handleLogout}
-                    className="text-red-400 hover:text-red-300 text-sm"
-                  >
-                    Выйти
-                  </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-3 ml-4 pl-4 border-l border-slate-600">
-                  <Link href="/login" className="text-cyan-400 hover:text-cyan-300 text-sm font-medium">
-                    Войти
-                  </Link>
-                  <Link href="/register" className="bg-cyan-500 hover:bg-cyan-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
-                    Регистрация
-                  </Link>
-                </div>
-              )
-            )}
-          </nav>
-        </div>
-      </header>
-
       <div className="max-w-6xl mx-auto px-6 py-12">
         <section className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">

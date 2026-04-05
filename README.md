@@ -1,229 +1,312 @@
-# CyberSimulator
+# Educational Cybersecurity Simulator
 
-Интерактивный веб-симулятор для повышения цифровой грамотности и безопасности.
+## Реализованная функциональность
 
-## Описание
+- Интерактивные сценарии кибербезопасности с уровнями сложности
+- Песочницы (sandbox) для практики в безопасной среде
+- Система геймификации: XP, достижения, таблица лидеров
+- Регистрация и аутентификация пользователей с JWT
+- Админ-панель для управления пользователями
+- Real-time статистика и мониторинг
+- WebSocket для уведомлений
+- Кэширование с Redis
+- Rate limiting для защиты API
+- Интеграция с внешними API (VirusTotal, Shodan)
+- Тёмная и светлая темы
 
-Проект разработан для обучения пользователей распознаванию киберугроз в повседневных цифровых средах. Пользователь попадает в симулированную среду, где сталкивается с реальными сценариями кибератак. Задача — идентифицировать угрозу и применить правильный алгоритм защиты.
+## Особенность проекта в следующем
 
-### Особенности
+- 7 сценариев с 15+ уровнями для изучения различных типов угроз
+- Изолированные sandbox-окружения на базе Docker/nginx
+- Геймификация с достижениями, сериями (streak) и XP
+- Встроенный мониторинг через Prometheus и Grafana
+- Анализ угроз через VirusTotal и Shodan API
 
-- 📚 Теория перед каждым заданием
-- 🎮 Интерактивные песочницы в отдельных Docker-контейнерах
-- 🎯 Динамические сценарии (управляются через админку)
-- 🛡️ 6 типов угроз (фишинг, социальная инженерия, скимминг и др.)
-- 📊 Статистика прогресса пользователей
-- 👥 Система ролей (USER, ADMIN)
-- 🔐 JWT-аутентификация
-- ⚙️ Динамическое управление сценариями через админ-панель
+## Основной стек технологий
 
-## Технологический стек
+- **Backend:** Go (Gin), PostgreSQL, Redis
+- **Frontend:** React (Next.js), TypeScript, Tailwind CSS
+- **Мониторинг:** Prometheus, Grafana
+- **Контейнеризация:** Docker, Docker Compose
+- **API:** REST, WebSocket
 
-- **Frontend**: Next.js 14, React, Tailwind CSS, TypeScript
-- **Backend Go**: Go 1.25, Gin, GORM, PostgreSQL
-- **Backend Java**: Spring Boot 4, JWT, PostgreSQL
-- **Database**: PostgreSQL 15
-- **Cache**: Redis 7
-- **Sandbox**: Docker, Nginx
-- **Container**: Docker Compose
+## Демо
 
-## Структура проекта
+Демо сервиса доступно по адресу: http://localhost:3001
 
-```
-├── docker-compose.yml          # Основной compose файл
-├── backend/                   # Go API (сценарии, уровни)
-│   ├── cmd/main.go            # Точка входа
-│   └── internal/
-│       ├── api/handler.go      # API endpoints
-│       └── models/models.go   # Модели данных (GORM)
-├── backendJava/              # Java API (аутентификация)
-│   └── src/main/java/
-│       └── com/beatrice/backendjava/
-│           ├── auth/          # JWT аутентификация
-│           ├── user/          # Пользователи, роли
-│           ├── stats/         # Статистика прогресса
-│           └── admin/         # Управление
-├── frontend/                 # Next.js приложение
-│   ├── app/
-│   │   ├── page.tsx          # Главная
-│   │   ├── scenarios/         # Сценарии
-│   │   ├── stats/            # Статистика
-│   │   ├── profile/         # Профиль пользователя
-│   │   ├── admin/           # Админ-панель
-│   │   │   ├── page.tsx     # Управление пользователями
-│   │   │   └── scenarios/   # Управление сценариями
-│   │   └── (auth)/          # Страницы входа
-│   └── Dockerfile
-└── sandbox/                 # Песочницы
-    ├── phishing/              # Симуляция фишинга
-    ├── email-client/          # Email клиент
-    ├── wifi-hotspot/          # Wi-Fi атаки
-    ├── social-network/        # Социальные сети
-    └── atm-simulator/         # Банкоматы
-```
+Реквизиты тестового пользователя: email: testuser@test.ru, пароль: testuser
 
-## Быстрый старт
+Реквизиты администратора: email: admin@cyber.ru, пароль: admin123
 
-### Требования
+## Среда запуска
 
-- Docker 20.10+
-- Docker Compose 2.0+
+- Требуется установленный Docker и Docker Compose
+- Требуется минимум 4GB RAM
+- Порт 3001 (frontend), 8000 (backend), 5433 (postgres), 6379 (redis), 3002 (grafana), 9091 (prometheus)
 
-### Запуск
+## Установка
+
+### Клонирование репозитория
 
 ```bash
-sudo docker-compose up -d --build
+git clone https://github.com/your-repo/educational-cybersecurity-simulator
+cd educational-cybersecurity-simulator
 ```
 
-### Доступ
-
-| Сервис | URL | Описание |
-|--------|-----|---------|
-| Frontend | http://localhost:3001 | Основной интерфейс |
-| Go API | http://localhost:8010 | API сценариев и уровней |
-| Java API | http://localhost:8080 | API аутентификации |
-| Admin | admin@cybersim.ru / admin123 | Админ-панель |
-
-### Песочницы (постоянно запущены)
-
-| Песочница | URL |
-|-----------|-----|
-| Phishing | http://localhost:9081 |
-| Email Client | http://localhost:9082 |
-| Wi-Fi Hotspot | http://localhost:9083 |
-| Social Network | http://localhost:9084 |
-| ATM Simulator | http://localhost:9085 |
-
-## Архитектура
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                      Frontend (Next.js)                   │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌───────┐ │
-│  │  Users   │  │ Scenarios│  │  Stats   │  │ Admin │ │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └───┬───┘ │
-└───────┼──────────────┼──────────────┼──────────────┼────┘
-        │              │              │              │
-        ▼              │              │              │
-┌───────────────┐      │              │              │
-│  Java API     │      │              │              │
-│  (Auth/JWT)  │      │              │              │
-│  :8080        │      │              │              │
-└───────┬───────┘      │              │              │
-        │              │              │              │
-        ▼              ▼              │              │
-┌─────────────────┐ ┌──────────┐      │              │
-│ PostgreSQL Java │ │ Redis    │      │              │
-│ (users, roles,  │ │ (JWT)    │      │              │
-│  stats)         │ └──────────┘      │              │
-└─────────────────┘                   │              │
-                                     ▼              │
-                           ┌──────────────────┐    │
-                           │     Go API        │    │
-                           │  (Scenarios)      │    │
-                           │     :8010         │    │
-                           └────────┬───────────┘    │
-                                    │                │
-                                    ▼                │
-                           ┌──────────────────┐      │
-                           │ PostgreSQL Go     │      │
-                           │ (scenarios,       │◄─────┘
-                           │  levels)          │   (CRUD)
-                           └──────────────────┘
-```
-
-## API Endpoints
-
-### Go API (сценарии и уровни)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/scenarios` | Все сценарии |
-| GET | `/api/v1/scenarios/:id` | Сценарий по ID |
-| POST | `/api/v1/scenarios` | Создать сценарий |
-| PUT | `/api/v1/scenarios/:id` | Обновить сценарий |
-| DELETE | `/api/v1/scenarios/:id` | Удалить сценарий |
-| GET | `/api/v1/scenarios/:id/levels` | Уровни сценария |
-| GET | `/api/v1/levels/:id` | Уровень по ID |
-| POST | `/api/v1/levels` | Создать уровень |
-| PUT | `/api/v1/levels/:id` | Обновить уровень |
-| DELETE | `/api/v1/levels/:id` | Удалить уровень |
-| GET | `/api/v1/attacks` | Типы атак |
-| GET | `/api/v1/tips` | Советы по безопасности |
-
-### Java API (аутентификация и пользователи)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/auth/register` | Регистрация |
-| POST | `/api/auth/login` | Вход |
-| POST | `/api/auth/logout` | Выход |
-| POST | `/api/auth/refresh` | Обновить токен |
-| GET | `/api/users/whoami` | Текущий пользователь |
-| GET | `/api/users/profile` | Профиль |
-| PUT | `/api/users/profile` | Обновить профиль |
-| GET | `/api/stats/me` | Статистика пользователя |
-| POST | `/api/stats/complete` | Записать прохождение |
-
-### Java API (админ)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/admin/users` | Все пользователи |
-| DELETE | `/api/admin/users/:id` | Удалить пользователя |
-| POST | `/api/admin/users/:id/roles` | Изменить роли |
-| GET | `/api/stats/admin/all` | Статистика всех |
-
-## Роли и права
-
-### USER
-- Прохождение сценариев и уровней
-- Просмотр своей статистики
-- Редактирование профиля
-
-### ADMIN
-- Всё что у USER
-- Управление пользователями (удаление, роли)
-- Управление сценариями и уровнями
-- Просмотр статистики всех пользователей
-
-## Разработка
-
-### Frontend
+### Запуск через Docker Compose
 
 ```bash
-cd frontend
-npm install
-npm run dev
+docker-compose up -d --build
 ```
 
-### Backend Go
+### Проверка статуса
 
 ```bash
-cd backend
-go mod tidy
-go run cmd/main.go
+docker-compose ps
 ```
 
-### Backend Java (в Docker)
+Сервисы будут доступны по адресам:
 
-Java бэкенд собирается внутри Docker при `docker-compose up --build`
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:8000
+- Swagger: http://localhost:8000/swagger/index.html
+- Grafana: http://localhost:3002 (логин: admin, пароль: admin)
+- Prometheus: http://localhost:9091
 
-## Типы угроз (CWE)
+### Остановка
 
-| ID | Тип | CWE |
-|----|-----|-----|
-| phishing | Фишинг | CWE-20, CWE-287 |
-| social_engineering | Социальная инженерия | CWE-306, CWE-862 |
-| evil_twin | Злой двойник | CWE-311 |
-| skimming | Скимминг | CWE-312 |
-| password | Подбор пароля | CWE-307, CWE-521 |
-| malware | Вредоносное ПО | CWE-94, CWE-506 |
+```bash
+docker-compose down
+```
 
-## Безопасность
+## База данных
 
-> ⚠️ Все угрозы в симуляторе смоделированы. Никакие реальные вредоносные файлы не используются.
+База данных создаётся автоматически при первом запуске через GORM миграции. Тестовые данные (сценарии, уровни, достижения, fake-пользователи) загружаются автоматически.
 
-## Лицензия
+## Доступные сценарии
 
-MIT
+1. Офис (Office) - фишинг, USB-угрозы, социальная инженерия
+2. Дом (Home) - безопасность паролей, удалённая работа
+3. Общественный Wi-Fi - атаки "злой двойник", скимминг
+4. Хакерская атака - брутфорс, подбор паролей
+5. Вредоносное ПО - анализ вирусов, шифровальщики
+6. Утечка данных - форензика, расследование инцидентов
+7. Умный дом - IoT-безопасность
+
+## Архитектура системы
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        Frontend                             │
+│                    (Next.js + React)                        │
+│                   http://localhost:3001                     │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         Backend                             │
+│                    (Go + Gin)                               │
+│                   http://localhost:8000                     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐  │
+│  │  Postgres│  │   Redis  │  │ WebSocket│  │ Rate Limit  │  │
+│  │  :5433   │  │  :6379   │  │          │  │             │  │
+│  └──────────┘  └──────────┘  └──────────┘  └─────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+         │                    │                    │
+         ▼                    ▼                    ▼
+┌──────────────┐    ┌──────────────┐    ┌──────────────────┐
+│  Prometheus  │    │   Grafana    │    │  Sandbox Labs    │
+│   :9091      │    │    :3002     │    │   :9081-9090     │
+└──────────────┘    └──────────────┘    └──────────────────┘
+```
+
+## Схема базы данных
+
+### Таблицы
+
+**users** - Пользователи
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER | PK, автоинкремент |
+| name | VARCHAR | Имя пользователя |
+| email | VARCHAR | Email (уникальный) |
+| phone | VARCHAR | Телефон |
+| password_hash | VARCHAR | Хэш пароля |
+| created_at | TIMESTAMP | Дата создания |
+
+**roles** - Роли
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER | PK |
+| name | VARCHAR | Название роли (USER, ADMIN) |
+| description | VARCHAR | Описание |
+
+**user_roles** - Связь пользователей и ролей
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER | PK |
+| user_id | INTEGER | FK -> users.id |
+| role_id | INTEGER | FK -> roles.id |
+
+**scenarios** - Сценарии
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | VARCHAR | PK (напр. "office") |
+| title | VARCHAR | Название |
+| description | TEXT | Описание |
+| icon | VARCHAR | Эмодзи |
+| color | VARCHAR | Цвет темы |
+| threat_type | VARCHAR | Тип угрозы |
+| threat_level | VARCHAR | Уровень угрозы |
+
+**levels** - Уровни
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER | PK |
+| scenario_id | VARCHAR | FK -> scenarios.id |
+| name | VARCHAR | Название |
+| attack | VARCHAR | Тип атаки |
+| difficulty | VARCHAR | Сложность |
+| theory | TEXT | Теория (HTML) |
+| action | TEXT | Задание |
+| correct_action | TEXT | Правильный ответ |
+| sandbox | VARCHAR | Название sandbox |
+| sandbox_port | INTEGER | Порт sandbox |
+| order | INTEGER | Порядок |
+
+**level_progress** - Прогресс пользователей
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER | PK |
+| user_id | INTEGER | FK -> users.id |
+| scenario_id | VARCHAR | FK -> scenarios.id |
+| level_id | INTEGER | FK -> levels.id |
+| completed | BOOLEAN | Завершён |
+| success | BOOLEAN | Успешно |
+| completed_at | TIMESTAMP | Дата завершения |
+
+**achievements** - Достижения
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER | PK |
+| code | VARCHAR | Уникальный код |
+| name | VARCHAR | Название |
+| description | TEXT | Описание |
+| icon | VARCHAR | Эмодзи |
+| xp_reward | INTEGER | Награда XP |
+| required | INTEGER | Требование |
+| type | VARCHAR | Тип |
+
+**user_achievements** - Достижения пользователей
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER | PK |
+| user_id | INTEGER | FK -> users.id |
+| achievement_id | INTEGER | FK -> achievements.id |
+| unlocked_at | TIMESTAMP | Дата получения |
+
+**user_stats** - Статистика пользователей
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER | PK |
+| user_id | INTEGER | FK -> users.id (уникальный) |
+| xp | INTEGER | Опыт |
+| level | INTEGER | Уровень |
+| completed_tasks | INTEGER | Завершено задач |
+| total_time | INTEGER | Всего времени (сек) |
+| streak | INTEGER | Серия дней |
+| last_active | DATE | Последняя активность |
+
+**refresh_tokens** - Токены обновления
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | INTEGER | PK |
+| user_id | INTEGER | FK -> users.id |
+| token | VARCHAR | Токен (уникальный) |
+| expires_at | TIMESTAMP | Срок действия |
+| created_at | TIMESTAMP | Дата создания |
+
+## Разработчики
+
+Зубов Юрий - Fullstack Dev
+Мосин Илья - Frontend Dev
+Зинько Егор - Backend Dev
+
+## ERD Диаграмма
+
+```
+┌─────────────────┐       ┌─────────────────┐
+│     roles       │       │   scenarios     │
+├─────────────────┤       ├─────────────────┤
+│ id (PK)         │       │ id (PK)         │
+│ name            │       │ title           │
+│ description     │       │ description     │
+└────────┬────────┘       │ icon            │
+         │                │ color           │
+         │                │ threat_type     │
+         │                │ threat_level    │
+         │                └───────┬─────────┘
+         │                        │
+         │                ┌───────▼─────────┐
+┌────────▼────────┐       │     levels      │
+│   user_roles    │       ├─────────────────┤
+├─────────────────┤       │ id (PK)         │
+│ id (PK)         │       │ scenario_id(FK) │
+│ user_id (FK)    │◄───── │ name            │
+│ role_id (FK)────┼─────► │ attack          │
+└────────┬────────┘       │ difficulty      │
+         │                │ theory          │
+         │                │ action          │
+         │                │ sandbox         │
+┌────────▼────────┐       │ sandbox_port    │
+│     users       │       │ order           │
+├─────────────────┤       └────────┬────────┘
+│ id (PK)         │                │
+│ name            │        ┌───────▼─────────┐
+│ email           │        │ level_progress  │
+│ phone           │        ├─────────────────┤
+│ password_hash   │        │ id (PK)         │
+│ created_at      │        │ user_id (FK)    │
+└────────┬────────┘        │ scenario_id(FK) │
+         │                 │ level_id (FK)   │
+         │                 │ completed       │
+         │                 │ success         │
+         │                 │ completed_at    │
+         │                 └─────────────────┘
+┌────────▼───────────────────────────────────────────────────────┐
+│                      user_stats                                │
+├────────────────────────────────────────────────────────────────┤
+│ id (PK)                                                        │
+│ user_id (FK) ─────────────────────────────────────────────────►│
+│ xp                                                             │
+│ level                                                          │
+│ completed_tasks                                                │
+│ total_time                                                     │
+│ streak                                                         │
+│ last_active                                                    │
+└────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────┐     ┌─────────────────────┐
+│    achievements     │     │  user_achievements  │
+├─────────────────────┤     ├─────────────────────┤
+│ id (PK)             │     │ id (PK)             │
+│ code                │     │ user_id (FK)        │
+│ name                │◄────│ achievement_id (FK) │
+│ description         │     │ unlocked_at         │
+│ icon                │     └─────────────────────┘
+│ xp_reward           │
+│ required            │
+│ type                │
+└─────────────────────┘
+
+┌─────────────────────┐
+│   refresh_tokens    │
+├─────────────────────┤
+│ id (PK)             │
+│ user_id (FK)        │
+│ token               │
+│ expires_at          │
+│ created_at          │
+└─────────────────────┘
+```
+

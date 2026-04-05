@@ -1,24 +1,12 @@
 'use client'
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState } from 'react'
-import { AuthProvider } from './lib/AuthContext'
+import { ThemeProvider } from './lib/ThemeContext'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: 60 * 1000,
-        refetchOnWindowFocus: false,
-      },
-    },
-  }))
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        {children}
-      </AuthProvider>
-    </QueryClientProvider>
+    <ThemeProvider>
+      {children}
+    </ThemeProvider>
   )
 }

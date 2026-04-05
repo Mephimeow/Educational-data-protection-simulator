@@ -179,6 +179,12 @@
         </div>
     </div>
 
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="completeLab()" style="background:#28a745; color:white; border:none; padding:15px 25px; border-radius:10px; font-size:16px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+            ✅ Задание выполнено
+        </button>
+    </div>
+
     <script>
         let clickCount = 0;
         
@@ -194,6 +200,11 @@
 
         function closeWarning() {
             document.getElementById('warningOverlay').classList.remove('show');
+        }
+
+        function completeLab() {
+            parent.postMessage({ type: 'lab-completed' }, '*');
+            alert('Отлично! Вы можете получить XP за выполнение задания.');
         }
 
         document.addEventListener('keydown', function(e) {

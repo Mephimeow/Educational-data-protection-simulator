@@ -3,9 +3,11 @@ package models
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -36,6 +38,9 @@ func InitDB() {
 		&UserRole{},
 		&LevelProgress{},
 		&RefreshToken{},
+		&Achievement{},
+		&UserAchievement{},
+		&UserStats{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to migrate database: %v", err)
@@ -43,6 +48,8 @@ func InitDB() {
 
 	seedData()
 	seedRoles()
+	seedAchievements()
+	seedFakeUsers()
 
 	log.Println("Database connected and migrated successfully")
 }
@@ -484,6 +491,36 @@ type RefreshToken struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type Achievement struct {
+	ID          uint   `gorm:"primaryKey" json:"id"`
+	Code        string `gorm:"unique;not null" json:"code"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Icon        string `json:"icon"`
+	XPReward    int    `json:"xp_reward"`
+	Required    int    `json:"required"`
+	Type        string `json:"type"`
+}
+
+type UserAchievement struct {
+	ID            uint        `gorm:"primaryKey" json:"id"`
+	UserID        uint        `gorm:"not null" json:"user_id"`
+	AchievementID uint        `gorm:"not null" json:"achievement_id"`
+	Achievement   Achievement `gorm:"foreignKey:AchievementID" json:"achievement,omitempty"`
+	UnlockedAt    time.Time   `json:"unlocked_at"`
+}
+
+type UserStats struct {
+	ID             uint   `gorm:"primaryKey" json:"id"`
+	UserID         uint   `gorm:"unique;not null" json:"user_id"`
+	XP             int    `json:"xp"`
+	Level          int    `json:"level"`
+	CompletedTasks int    `json:"completed_tasks"`
+	TotalTime      int    `json:"total_time"`
+	Streak         int    `json:"streak"`
+	LastActive     string `json:"last_active"`
+}
+
 func seedRoles() {
 	var count int64
 	DB.Model(&Role{}).Count(&count)
@@ -501,4 +538,87 @@ func seedRoles() {
 	}
 
 	log.Println("Roles seeded")
+}
+
+func seedAchievements() {
+	var count int64
+	DB.Model(&Achievement{}).Count(&count)
+	if count > 0 {
+		return
+	}
+
+	achievements := []Achievement{
+		{Code: "first_steps", Name: "Первые шаги", Description: "Пройдите первый уровень", Icon: "🎯", XPReward: 10, Required: 1, Type: "levels"},
+		{Code: "phishing_master", Name: "Мастер фишинга", Description: "Пройдите 5 уровней", Icon: "🎣", XPReward: 50, Required: 5, Type: "phishing"},
+		{Code: "streak_3", Name: "Тройная серия", Description: "3 дня подряд", Icon: "🔥", XPReward: 30, Required: 3, Type: "streak"},
+		{Code: "streak_7", Name: "Недельная серия", Description: "7 дней подряд", Icon: "⚡", XPReward: 100, Required: 7, Type: "streak"},
+		{Code: "xp_100", Name: "Сотня", Description: "Наберите 100 XP", Icon: "🌟", XPReward: 10, Required: 100, Type: "xp"},
+		{Code: "xp_500", Name: "Полтыщи", Description: "Наберите 500 XP", Icon: "⭐", XPReward: 50, Required: 500, Type: "xp"},
+	}
+
+	for _, a := range achievements {
+		DB.Create(&a)
+	}
+
+	log.Println("Achievements seeded")
+}
+
+func seedFakeUsers() {
+	var userCount int64
+	DB.Model(&User{}).Count(&userCount)
+	if userCount > 1 {
+		return
+	}
+
+	fakeUsers := []struct {
+		Name  string
+		Email string
+		Phone string
+		XP    int
+		Level int
+		Tasks int
+	}{
+		{"Алексей Смирнов", "alex@example.com", "+79011111111", 1250, 8, 15},
+		{"Мария Петрова", "maria@example.com", "+79022222222", 980, 6, 12},
+		{"Иван Иванов", "ivan@example.com", "+79033333333", 750, 5, 9},
+		{"Елена Сидорова", "elena@example.com", "+79044444444", 620, 4, 8},
+		{"Дмитрий Козлов", "dmitri@example.com", "+79055555555", 450, 3, 6},
+		{"Анна Морозова", "anna@example.com", "+79066666666", 320, 2, 4},
+		{"Сергей Волков", "sergey@example.com", "+79077777777", 180, 1, 2},
+		{"Ольга Новикова", "olga@example.com", "+79088888888", 95, 1, 1},
+	}
+
+	for _, u := range fakeUsers {
+		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+
+		user := User{
+			Name:         u.Name,
+			Email:        u.Email,
+			Phone:        u.Phone,
+			PasswordHash: string(hashedPassword),
+			CreatedAt:    time.Now().Add(-time.Duration(rand.Intn(30)) * 24 * time.Hour),
+		}
+		DB.Create(&user)
+
+		var userRole Role
+		DB.Where("name = ?", "USER").First(&userRole)
+		userRoleRelation := UserRole{
+			UserID: user.ID,
+			RoleID: userRole.ID,
+		}
+		DB.Create(&userRoleRelation)
+
+		stats := UserStats{
+			UserID:         user.ID,
+			XP:             u.XP,
+			Level:          u.Level,
+			CompletedTasks: u.Tasks,
+			TotalTime:      rand.Intn(3600) + 300,
+			Streak:         rand.Intn(7) + 1,
+			LastActive:     time.Now().Add(-time.Duration(rand.Intn(48)) * time.Hour).Format("2006-01-02"),
+		}
+		DB.Create(&stats)
+	}
+
+	log.Println("Fake users seeded")
 }

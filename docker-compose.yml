@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: cyberdb
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -23,6 +23,23 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9091:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3002:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
 
   backend:
     build:
@@ -53,7 +70,89 @@ services:
       - backend
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_AUTH_API_URL=http://localhost:8000
+
+  sandbox-phishing:
+    image: nginx:alpine
+    ports:
+      - "9081:80"
+    volumes:
+      - ./sandbox/phishing:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  sandbox-email:
+    image: nginx:alpine
+    ports:
+      - "9082:80"
+    volumes:
+      - ./sandbox/email-client:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  sandbox-wifi:
+    image: nginx:alpine
+    ports:
+      - "9083:80"
+    volumes:
+      - ./sandbox/wifi-hotspot:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  sandbox-social:
+    image: nginx:alpine
+    ports:
+      - "9084:80"
+    volumes:
+      - ./sandbox/social-network:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  sandbox-atm:
+    image: nginx:alpine
+    ports:
+      - "9085:80"
+    volumes:
+      - ./sandbox/atm-simulator:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  sandbox-password-crack:
+    image: nginx:alpine
+    ports:
+      - "9086:80"
+    volumes:
+      - ./sandbox/password-crack:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  sandbox-malware-scan:
+    image: nginx:alpine
+    ports:
+      - "9087:80"
+    volumes:
+      - ./sandbox/malware-scan:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  sandbox-data-leak:
+    image: nginx:alpine
+    ports:
+      - "9088:80"
+    volumes:
+      - ./sandbox/data-leak:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  sandbox-ransomware:
+    image: nginx:alpine
+    ports:
+      - "9089:80"
+    volumes:
+      - ./sandbox/ransomware:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  sandbox-iot-attack:
+    image: nginx:alpine
+    ports:
+      - "9090:80"
+    volumes:
+      - ./sandbox/iot-attack:/usr/share/nginx/html:ro
+    restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
+  grafana_data:

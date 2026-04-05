@@ -93,7 +93,7 @@ export default function ScenarioPage() {
           {scenario.levels?.map(level => (
             <Link
               key={level.id}
-              href={`/scenarios/${scenarioId}/${level.id}`}
+              href={`/scenarios/${scenarioId}/${level.order}`}
               className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-2xl p-6 hover:border-cyan-500/50 transition group"
             >
               <div className="flex items-center justify-between mb-4">

@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/lib/AuthContext'
 import { authService } from '@/lib/auth'
+import { useTheme } from '@/lib/ThemeContext'
 
-const AUTH_API_URL = process.env.NEXT_PUBLIC_AUTH_API_URL || 'http://localhost:8080'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 interface UserProfile {
   id: number
@@ -16,7 +17,9 @@ interface UserProfile {
 
 export default function ProfilePage() {
   const { user, loading: authLoading, isAuthenticated } = useAuth()
+  const { theme, toggleTheme } = useTheme()
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [gamificationStats, setGamificationStats] = useState<{xp: number, level: number, achievements: number} | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -28,6 +31,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (!authLoading && isAuthenticated) {
       fetchProfile()
+      fetchGamificationStats()
     } else if (!authLoading && !isAuthenticated) {
       setLoading(false)
     }
@@ -37,7 +41,7 @@ export default function ProfilePage() {
     try {
       setLoading(true)
       const token = authService.getAccessToken()
-      const res = await fetch(`${AUTH_API_URL}/api/users/profile`, {
+      const res = await fetch(`${API_URL}/api/v1/users/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -55,6 +59,23 @@ export default function ProfilePage() {
     }
   }
 
+  const fetchGamificationStats = async () => {
+    try {
+      const token = authService.getAccessToken()
+      const res = await fetch(`${API_URL}/api/v1/gamification/stats`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setGamificationStats({ xp: data.stats?.xp || 0, level: data.stats?.level || 1, achievements: data.achievements || 0 })
+      }
+    } catch (err) {
+      console.error('Failed to load gamification stats')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
@@ -63,7 +84,7 @@ export default function ProfilePage() {
 
     try {
       const token = authService.getAccessToken()
-      const res = await fetch(`${AUTH_API_URL}/api/users/profile`, {
+      const res = await fetch(`${API_URL}/api/v1/users/profile`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -206,12 +227,35 @@ export default function ProfilePage() {
               </div>
               <h3 className="text-xl font-bold text-white mb-1">{profile?.name || 'Пользователь'}</h3>
               <p className="text-slate-400 text-sm mb-4">{profile?.email}</p>
+              {gamificationStats && (
+                <div className="bg-slate-700/50 rounded-lg p-3 mb-4">
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-slate-400">Уровень {gamificationStats.level}</span>
+                    <span className="text-cyan-400">{gamificationStats.xp} XP</span>
+                  </div>
+                  <div className="w-full bg-slate-600 rounded-full h-2">
+                    <div className="bg-cyan-500 h-2 rounded-full" style={{ width: `${Math.min((gamificationStats.xp % 100), 100)}%` }} />
+                  </div>
+                  <p className="text-xs text-slate-500 mt-2">🏆 {gamificationStats.achievements} достижений</p>
+                </div>
+              )}
               <Link 
                 href="/stats"
                 className="inline-block bg-slate-700 hover:bg-slate-600 text-white text-sm px-4 py-2 rounded-lg transition"
               >
                 📊 Моя статистика
               </Link>
+            </div>
+
+            <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
+              <h3 className="text-lg font-bold text-white mb-4">Настройки</h3>
+              <button
+                onClick={toggleTheme}
+                className="flex items-center gap-3 text-slate-300 hover:text-cyan-400 transition p-2 rounded-lg hover:bg-slate-700/50 w-full"
+              >
+                <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+                <span>{theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}</span>
+              </button>
             </div>
 
             <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">

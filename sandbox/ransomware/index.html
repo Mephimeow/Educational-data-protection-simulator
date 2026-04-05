@@ -258,5 +258,10 @@
             alert('💡 Подсказка:\n\nПри атаке шифровальщика:\n1. НЕ платите выкуп!\n2. Поищите резервные копии файлов\n3. Используйте антивирус для удаления вредоносного ПО\n4. Восстановите файлы из бэкапа\n\nНайдите файл backup.zip!');
         }
     </script>
+    <div style="position:fixed; bottom:20px; right:20px; z-index:1000;">
+        <button onclick="parent.postMessage({ type: 'lab-completed' }, '*'); alert('Задание выполнено!')" style="background:#28a745; color:white; border:none; padding:15px 25px; border-radius:10px; font-size:16px; cursor:pointer; box-shadow:0 4px 15px rgba(0,0,0,0.3);">
+            ✅ Задание выполнено
+        </button>
+    </div>
 </body>
 </html>

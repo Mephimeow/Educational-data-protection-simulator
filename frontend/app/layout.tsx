@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Providers from './Providers'
+import { Navbar } from './lib/Navbar'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -15,7 +16,10 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body>
-        <Providers>{children}</Providers>
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
       </body>
     </html>
   )
